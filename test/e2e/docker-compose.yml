@@ -1,0 +1,14 @@
+version: '2'
+services:
+  redis:
+    image: redis:3.2.5-alpine
+    ports:
+      - "6379:6379"
+
+  # esp:
+  #   build: TODO
+  
+  deathnut-example:
+    build: .
+    depends_on:
+      - redis
