@@ -1,9 +1,10 @@
 #!/bin/bash
 
-docker build --no-cache -t recipe_service -f Dockerfile .
+docker build --no-cache -t recipe-service -f Dockerfile .
 
-docker run -dp 80:80 recipe_service
+docker run -dp 80:80 --name recipe-service recipe-service
 
-docker run --detach -v $(pwd)/keys:/keys gcr.io/endpoints-release/endpoints-runtime:1 \
-  --service=recipe_service --rollout_strategy=managed --backend=127.0.0.1:80 \
-  --service_account_key=/keys/gcloud-test-key.json
+docker run --detach -v $(pwd)/keys:/keys -p 8080:8080 --link recipe-service:recipe-service \
+  gcr.io/endpoints-release/endpoints-runtime:1 \
+  --service=recipe-service.endpoints.wellio-dev-michael.cloud.goog --rollout_strategy=managed \
+  --backend=recipe-service:80 --http_port 8080 --service_account_key=/keys/jwt-test.json
