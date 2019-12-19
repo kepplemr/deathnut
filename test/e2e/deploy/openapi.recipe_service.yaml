@@ -1,0 +1,87 @@
+swagger: "2.0"
+info:
+  description: "Example recipe service"
+  title: "Recipe Service"
+  version: "1.0"
+host: "recipe-service.endpoints.wellio-dev-michael.cloud.goog"
+definitions:
+  Recipe:
+    properties:
+      id:
+        description: Recipe id
+        format: int32
+        type: integer
+      ingredients:
+        description: Recipe ingredients
+        items:
+          type: string
+        type: array
+      title:
+        description: Recipe title
+        type: string
+    required:
+    - ingredients
+    - title
+    type: object
+  Recipe partial:
+    properties:
+      id:
+        description: Recipe id
+        format: int32
+        type: integer
+      ingredients:
+        description: Recipe ingredients
+        items:
+          type: string
+        type: array
+      title:
+        description: Recipe title
+        type: string
+    type: object
+paths:
+  /recipe:
+    post:
+      operationId: post_recipe
+      parameters:
+      - in: body
+        name: body
+        required: false
+        schema:
+          $ref: '#/definitions/Recipe'
+      responses:
+        default:
+          description: ''
+          schema:
+            $ref: '#/definitions/Recipe'
+  /recipe/{id}:
+    get:
+      operationId: get_{id}
+      parameters:
+      - format: int32
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        default:
+          description: ''
+          schema:
+            $ref: '#/definitions/Recipe'
+    patch:
+      operationId: patch_{id}
+      parameters:
+      - in: body
+        name: body
+        required: false
+        schema:
+          $ref: '#/definitions/Recipe partial'
+      - format: int32
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        default:
+          description: ''
+          schema:
+            $ref: '#/definitions/Recipe'
