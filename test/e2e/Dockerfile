@@ -5,7 +5,8 @@ LABEL description="Example Recipe app"
 ADD ./recipe-service /recipe-service
 
 RUN mkdir -p /recipe-service/deploy/openapi
-WORKDIR /recipe-service
+
+ENV PYTHONPATH $PYTHONPATH:/recipe-service
 
 EXPOSE 80
 
