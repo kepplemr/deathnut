@@ -59,12 +59,11 @@ class RestAuthorization:
         user = self._get_user_from_jwt_header(request)
         return user, enabled, strict
     
-    def _check_auth(self, user, resource_id=None):
+    def _check_auth(self, user, role=None, resource_id=None):
         if user == 'Unauthenticated':
             return False
-        # TODO 
         if resource_id:
-            pass
+            return self.client.hget('{}:{}'.format(user,role), resource_id)
         return True
 
     def assigns_roles(self, roles=[], **kwargs):
@@ -88,7 +87,7 @@ class RestAuthorization:
         if roles:
             for role in roles:
                 logger.info('Assigning role <{}> to user <{}> for resource <{}>, id <{}>'.format(role, user, self.resource, resource_id))
-                self.client.hset(user, role, resource_id)
+                self.client.hset('{}:{}'.format(user, role), resource_id, 'set')
 
     # TODO make async on get (use request)
     def requires_role(self, role, id_identifier='id'):
@@ -99,7 +98,7 @@ class RestAuthorization:
                 if not self._check_enabled_and_strict(user, enabled, strict):
                     return func(*args, **kwargs)
                 resource_id = kwargs[id_identifier]
-                if not self._check_auth(user, resource_id):
+                if not self._check_auth(user, role, resource_id):
                     return jsonify({'message':'Failed'}), 401
                 return func(*args, user=user, **kwargs)
             return wrapped
