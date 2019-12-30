@@ -9,7 +9,7 @@ from flask_apispec import MethodResource, doc, marshal_with, use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from marshmallow import Schema, fields
 
-from deathnut import deathnut
+from deathnut import rest_authorization
 from generate_template import generate_template_from_app
 
 logging.getLogger().setLevel(logging.INFO)
@@ -20,7 +20,7 @@ handler.setFormatter(formatter)
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-auth_o = deathnut.Authorization(resource='recipe', privileges=['view', 'edit', 'own'], enabled=True)
+auth_o = rest_authorization.RestAuthorization(resource='recipe', enabled=True)
 
 class RecipeSchema(Schema):
     class Meta:
@@ -41,11 +41,9 @@ app = Flask(__name__)
 # have two async checks, one for public and 
 @app.route('/recipe/<int:id>', methods=('GET',))
 @marshal_with(RecipeSchema)
-#@auth_o.protect('view')
+# func.name == 'get' then don't block. Allow for override.
+#@auth_o.requires_role('view', async=True)
 def get(id, **kwargs):
-    logger.info('User info -> ' + request.headers.get('X-Endpoint-Api-Userinfo', ''))
-    #user_info = json.loads(base64.b64decode(request.headers.get('X-Endpoint-Api-Userinfo', '')))['email']
-    #logger.info(str(user_info))
     return recipe_db[id], 200
 
 # How do we know if a recipe should be public or restricted?
@@ -62,7 +60,6 @@ def post(title, ingredients, **kwargs):
         new_id = recipe_db[-1]["id"] + 1 if len(recipe_db) > 0 else 0
     new_recipe = {"id": new_id, "title": title, "ingredients": ingredients}
     recipe_db.append(new_recipe)
-    logger.info('Passed in id -> ' + kwargs['user_id'])
     auth_o.assign(new_id, **kwargs)
     return new_recipe, 200
 

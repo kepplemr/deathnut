@@ -44,13 +44,6 @@ def make_jwt_request(method, url, signed_jwt, data=None):
     response.raise_for_status()
     return response.text
 
-# curl -X POST "http://localhost:80/recipe" -H "accept: application/json"  --data-binary \
-#   '{"title": "Michael Cold Brew", "ingredients": ["Water", "Coffee"]}'
-# curl -X GET "http://localhost:80/recipe/2" -H "accept: application/json"
-# curl -X PATCH "http://localhost:80/recipe/2" -H "accept: application/json" --data-binary \
-#   '{"ingredients": ["Water", "Coffee", "Spices"]}'
-# curl -X GET "http://localhost:80/recipe/2" -H "accept: application/json"
-
 def test_unsecured_requests():
     print('Testing unsecured requests')
     port = 80
@@ -78,7 +71,7 @@ def test_secured_requests():
 
 def main():
     test_unsecured_requests()
-    #test_secured_requests()
+    test_secured_requests()
 
 if __name__ == "__main__":
     main()
