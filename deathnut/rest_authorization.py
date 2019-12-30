@@ -5,7 +5,7 @@ import logging
 import redis
 import sys
 
-from flask import request
+from flask import request, jsonify
 
 logging.getLogger().setLevel(logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,9 +16,6 @@ handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
 class RestAuthorization:
-    strict = True
-    enabled = True
-
     def __init__(self, resource, strict=True, enabled=True):
         """
         Parameters
@@ -29,15 +26,15 @@ class RestAuthorization:
             If True, all requests must possess valid credentials extracted from JWT token. If False,
             unauthenticated users will have access to all resources. Useful for supporting traffic 
             not originating from ESP (inside the VPC) as we transition.
-            Note: this value is a default and can be overrideen endpoint-by-endpoint.
+            Note: this value is a default and can be overiden endpoint-by-endpoint.
         enabled: bool
             If True, authorization checks will run. If False, all users will have access to
             everything. 
-            Note: this value is a default and can be overrideen endpoint-by-endpoint.
+            Note: this value is a default and can be overiden endpoint-by-endpoint.
         """
         self.resource = resource
-        self.strict = strict
-        self.enabled = enabled
+        self._strict = strict
+        self._enabled = enabled
         self.client = redis.Redis(host="redis", port=6379)
 
     def _get_user_from_jwt_header(self, request):
@@ -55,15 +52,32 @@ class RestAuthorization:
             logger.warn('Strict auth checking disabled, granting access to unauthenticated user')
             return False
         return True
+    
+    def _get_auth_arguments(self, request, **kwargs):
+        enabled = kwargs.get('enabled', self._enabled)
+        strict = kwargs.get('strict', self._strict)
+        user = self._get_user_from_jwt_header(request)
+        return user, enabled, strict
+    
+    def _check_auth(self, user, resource_id=None):
+        if user == 'Unauthenticated':
+            return False
+        # TODO 
+        if resource_id:
+            pass
+        return True
 
-    def assigns_roles(self, roles=[], enabled=enabled, strict=strict):
+    def assigns_roles(self, roles=[], **kwargs):
         def decorator(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
                 # request must be passed from here to not be outside flask req context.
-                user = self._get_user_from_jwt_header(request)
+                user, enabled, strict = self._get_auth_arguments(request, **kwargs)
+                # auth_o is disabled or strict is false and user is unauthenticated
                 if not self._check_enabled_and_strict(user, enabled, strict):
                     return func(*args, **kwargs)
+                if not self._check_auth(user):
+                    return jsonify({'message':'Failed'}), 401
                 return func(*args, user=user, roles=roles, **kwargs)
             return wrapped
         return decorator
@@ -71,22 +85,22 @@ class RestAuthorization:
     def assign(self, resource_id, **kwargs):
         user = kwargs.get('user', '')
         roles = kwargs.get('roles', None)
-        for role in roles:
-            logger.info('Assigning role {} to user <{}> for resource <{}>, id <{}>'.format(role, user, self.resource, resource_id))
-            self.client.hset(user, role, resource_id)
+        if roles:
+            for role in roles:
+                logger.info('Assigning role <{}> to user <{}> for resource <{}>, id <{}>'.format(role, user, self.resource, resource_id))
+                self.client.hset(user, role, resource_id)
 
-    # TODO GET logic here
-    # def requires_role(self, role):
-    #     def decorator(func):
-    #         @functools.wraps(func)
-    #         def wrapped(*args, **kwargs):
-    #             # can perform auth_o check, fetch asynchronously
-    #             if request.method == 'GET':
-    #                 _perform_async_get()
-    #             else:
-
-    #             user = 'Unauthenticated'
-    #             jwt_header = request.headers.get('X-Endpoint-Api-Userinfo', '')
-    #             if jwt_header:
-    #                 user = json.loads(base64.b64decode(jwt_header))['email']
-    #             val = func(*args, user=user, **kwargs)
+    # TODO make async on get (use request)
+    def requires_role(self, role, id_identifier='id'):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                user, enabled, strict = self._get_auth_arguments(request, **kwargs)
+                if not self._check_enabled_and_strict(user, enabled, strict):
+                    return func(*args, **kwargs)
+                resource_id = kwargs[id_identifier]
+                if not self._check_auth(user, resource_id):
+                    return jsonify({'message':'Failed'}), 401
+                return func(*args, user=user, **kwargs)
+            return wrapped
+        return decorator                

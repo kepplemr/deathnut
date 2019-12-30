@@ -20,7 +20,7 @@ handler.setFormatter(formatter)
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-auth_o = rest_authorization.RestAuthorization(resource='recipe', enabled=True)
+auth_o = rest_authorization.RestAuthorization(resource='recipe', enabled=True, strict=False)
 
 class RecipeSchema(Schema):
     class Meta:
@@ -41,8 +41,7 @@ app = Flask(__name__)
 # have two async checks, one for public and 
 @app.route('/recipe/<int:id>', methods=('GET',))
 @marshal_with(RecipeSchema)
-# func.name == 'get' then don't block. Allow for override.
-#@auth_o.requires_role('view', async=True)
+@auth_o.requires_role('view')
 def get(id, **kwargs):
     return recipe_db[id], 200
 
