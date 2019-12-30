@@ -51,7 +51,6 @@ def get(id, **kwargs):
 @app.route('/recipe', methods=('POST',))
 @use_kwargs(RecipeSchema, locations=('json',))
 @marshal_with(RecipeSchema)
-# use wrapper to set id
 @auth_o.assigns_roles(roles=['view', 'edit', 'own'])
 def post(title, ingredients, **kwargs):
     if 'id' in kwargs:

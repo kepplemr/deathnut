@@ -16,6 +16,9 @@ handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
 class RestAuthorization:
+    strict = True
+    enabled = True
+
     def __init__(self, resource, strict=True, enabled=True):
         """
         Parameters
@@ -26,9 +29,11 @@ class RestAuthorization:
             If True, all requests must possess valid credentials extracted from JWT token. If False,
             unauthenticated users will have access to all resources. Useful for supporting traffic 
             not originating from ESP (inside the VPC) as we transition.
+            Note: this value is a default and can be overrideen endpoint-by-endpoint.
         enabled: bool
             If True, authorization checks will run. If False, all users will have access to
             everything. 
+            Note: this value is a default and can be overrideen endpoint-by-endpoint.
         """
         self.resource = resource
         self.strict = strict
@@ -41,44 +46,33 @@ class RestAuthorization:
         if jwt_header:
             user = json.loads(base64.b64decode(jwt_header))['email']
         return user
+    
+    def _check_enabled_and_strict(self, user, enabled, strict):
+        if not enabled:
+            logger.warn('Authorization is not enabled')
+            return False
+        if not strict and user == 'Unauthenticated':
+            logger.warn('Strict auth checking disabled, granting access to unauthenticated user')
+            return False
+        return True
 
-# def my_decorator(func):
-#     def wrapper():
-#         print("Something is happening before the function is called.")
-#         func()
-#         print("Something is happening after the function is called.")
-#     return wrapper
-
-# def do_twice(func):
-#     @functools.wraps(func)
-#     def wrapper_do_twice(*args, **kwargs):
-#         func(*args, **kwargs)
-#         return func(*args, **kwargs)
-#     return wrapper_do_twice
-
-    def _check_if_auth_runnable(self, func):
-        @functools.wraps(func)
-        def wrapped(*args, **kwargs):
-            return func(*args, **kwargs)
-        return wrapped
-
-    @_check_if_auth_runnable
-    def assigns_roles(self, roles=[]):
+    def assigns_roles(self, roles=[], enabled=enabled, strict=strict):
         def decorator(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
+                # request must be passed from here to not be outside flask req context.
                 user = self._get_user_from_jwt_header(request)
-
-                val = func(*args, user=user, roles=roles, **kwargs)
-                return val
+                if not self._check_enabled_and_strict(user, enabled, strict):
+                    return func(*args, **kwargs)
+                return func(*args, user=user, roles=roles, **kwargs)
             return wrapped
         return decorator
     
     def assign(self, resource_id, **kwargs):
-        user = kwargs['user']
-        roles = kwargs['roles']
-        logger.info('Assigning role(s) {} to user <{}> for resource <{}>, id <{}>'.format(roles, user, self.resource, resource_id))
+        user = kwargs.get('user', '')
+        roles = kwargs.get('roles', None)
         for role in roles:
+            logger.info('Assigning role {} to user <{}> for resource <{}>, id <{}>'.format(role, user, self.resource, resource_id))
             self.client.hset(user, role, resource_id)
 
     # TODO GET logic here
