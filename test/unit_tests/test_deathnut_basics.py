@@ -1,12 +1,11 @@
-import birdisle
+import fakeredis
 import unittest
 
-from deathnut.client import DeathnutClient
+from deathnut.client.deathnut_client import DeathnutClient
 
-server = birdisle.Server()
-redis = birdisle.redis.StrictRedis(server=server)
+fake_redis_conn = fakeredis.FakeStrictRedis()
 
-dn_client = DeathnutClient(service='test', resource='recipes', redis_connection=redis)
+dn_client = DeathnutClient(service='test', resource='recipes', redis_connection=fake_redis_conn)
 
 class TestEquivalenceHash(unittest.TestCase):
     def test_duplicate_recipes_hashes_are_equal(self):
