@@ -1,3 +1,4 @@
-*.py
+*.pyc
 *.json
+.tox/
 __pycache__/
