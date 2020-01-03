@@ -1,8 +1,8 @@
 
 import redis
 
-from util.logger import get_deathnut_logger
-from util.deathnut_exception import DeathnutException
+from deathnut.util.logger import get_deathnut_logger
+from deathnut.util.deathnut_exception import DeathnutException
 
 logger = get_deathnut_logger(__name__)
 

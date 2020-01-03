@@ -1,4 +1,5 @@
 *.pyc
 *.json
+*.egg-info/
 .tox/
 __pycache__/
