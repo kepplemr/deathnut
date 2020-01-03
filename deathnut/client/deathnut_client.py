@@ -1,4 +1,3 @@
-
 import redis
 
 from deathnut.util.logger import get_deathnut_logger
@@ -7,8 +6,8 @@ from deathnut.util.deathnut_exception import DeathnutException
 logger = get_deathnut_logger(__name__)
 
 class DeathnutClient:
-    def __init__(self, service, resource, strict=True, enabled=True, redis_connection=None,
-            redis_host='redis', redis_port=6379, redis_pw=None, redis_db=0):
+    def __init__(self, service, resource, redis_connection=None, redis_host='redis',
+            redis_port=6379, redis_pw=None, redis_db=0):
         """
         Parameters
         ----------
@@ -18,13 +17,6 @@ class DeathnutClient:
             Name of REST resource being protected.
         failure_callback: func
             Return when authorization fails.
-        strict: bool
-            If False, user 'Unauthenticated' 
-            Note: this value is a default and can be overiden when calling client methods.
-        enabled: bool
-            If True, authorization checks will run. If False, all users will have access to
-            everything. 
-            Note: this value is a default and can be overiden when calling client methods.
         redis_connection: redis.Redis or redis.Strictredis (deprecated)
             redis client class. Allows deathnut clients to inject their custom redis connection.
             Clients that do not wish to handle their own redis can provide [redis_host, redis_port,
@@ -44,8 +36,6 @@ class DeathnutClient:
         """
         self._service = service
         self._resource = resource
-        self._strict = strict
-        self._enabled = enabled
         if redis_connection:
             self._client = redis_connection
         else:
@@ -54,15 +44,6 @@ class DeathnutClient:
             logger.warn('Custom redis connection not passed, will use standard at {}:{}'.format(redis_host, redis_port))
             self._client = redis.Redis(host=redis_host, port=redis_port, password=redis_pw, db=redis_db)
         self._client.ping()
-
-    def _check_enabled_and_strict(self, user, enabled, strict):
-        if not enabled:
-            logger.warn('Authorization is not enabled')
-            return False
-        if not strict and user == 'Unauthenticated':
-            logger.warn('Strict auth checking disabled, granting access to unauthenticated user')
-            return False
-        return True
 
     def _check_auth(self, user, role=None, resource_id=None):
         if user == 'Unauthenticated':
@@ -79,9 +60,9 @@ class DeathnutClient:
     def check_role(self, user, role, resource_id):
         pass
         #if self._check_auth(user, enabled, strict)
+    
+    def revoke_role(self, user, role, resource_id):
+        pass
 
-
-
-# Have a child RestClient
-    def execute_if_authorized(self, user, resource_id, enabled, strict, dont_wait, func, *args, **kwargs):
+    def get_resources(self, user, role):
         pass
