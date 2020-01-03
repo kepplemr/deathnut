@@ -20,7 +20,7 @@ handler.setFormatter(formatter)
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 
-auth_o = rest_authorization.RestAuthorization(resource='recipe', enabled=True, strict=False)
+auth_o = rest_authorization.RestAuthorization(service='example',resource='recipe', enabled=True, strict=False)
 
 class RecipeSchema(Schema):
     class Meta:
