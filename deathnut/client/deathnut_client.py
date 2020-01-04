@@ -57,14 +57,9 @@ class DeathnutClient:
         self._client.hdel('{}:{}:{}'.format(self._name, user, role), resource_id)
 
     def get_resources(self, user, role, page_size=10):
-        #return self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role))
-        #yield self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=limit)
-        # gen = self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=5)
-        # limited_gen = itertools.islice(gen, 10)
-        # yield list(limited_gen)
-        # for resource in self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=5):
-        #yield list(itertools.islice(self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=limit), 10))
-        cursor = 0
-        while True:
-            yield self._client.hscan('{}:{}:{}'.format(self._name, user, role), cursor=cursor, count=page_size)
-            cursor += page_size
+        """redis default is a count of 10"""
+        cursor = '0'
+        while cursor != 0:
+            cursor, data = self._client.hscan('{}:{}:{}'.format(self._name, user, role), cursor=cursor, count=page_size)
+            yield [x[0].decode() for x in data.items()]
+

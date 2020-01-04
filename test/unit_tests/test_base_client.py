@@ -37,10 +37,12 @@ class TestBaseDeathnutClient(unittest.TestCase):
         self.assertFalse(dn_client.check_role('test_user', 'own', random_resource_id))
 
     def test_get_resources(self):
-        for _ in range(25):
+        for _ in range(90):
             random_resource_id = str(uuid.uuid4())
             dn_client.assign_role('test_user', 'view', random_resource_id)
-        # for page in dn_client.get_resources('test_user', 'view', page_size=10):
-        #     logger.warn('Page -> ' + str(page))
-        assert(True==False)
+        self.assertEqual(5, len(list(dn_client.get_resources('test_user', 'view', page_size=20))))
+        self.assertEqual(9, len(list(dn_client.get_resources('test_user', 'view', page_size=10))))
+        self.assertEqual(1, len(list(dn_client.get_resources('test_user', 'view', page_size=90))))
+        for page in dn_client.get_resources('test_user', 'view', page_size=10):
+            self.assertEqual(10, len(page))
         
