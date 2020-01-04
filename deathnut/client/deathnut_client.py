@@ -6,7 +6,7 @@ from deathnut.util.deathnut_exception import DeathnutException
 
 logger = get_deathnut_logger(__name__)
 
-class DeathnutClient:
+class DeathnutClient(object):
     def __init__(self, service, resource_type, redis_connection=None, redis_host='redis', 
             redis_port=6379, redis_pw=None, redis_db=0):
         """
