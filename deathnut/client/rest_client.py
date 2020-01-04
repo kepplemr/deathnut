@@ -12,6 +12,8 @@ class DeathnutRestClient(DeathnutClient):
         """
         Parameters
         ----------
+        failure_callback: func
+            Return when authorization fails.
         strict: bool
             If False, user 'Unauthenticated' 
             Note: this value is a default and can be overiden when calling client methods.
@@ -25,8 +27,14 @@ class DeathnutRestClient(DeathnutClient):
         self._enabled = enabled
         self._base_client = super().__init__(service, resource, redis_connection, redis_host,
             redis_port, redis_pw, redis_db)
+    
+    def get_strict(self):
+        return self._strict
+    
+    def get_enabled(self):
+        return self._enabled
 
-    def _check_enabled_and_strict(self, user, enabled, strict):
+    def _check_auth_required(self, user, enabled, strict):
         if not enabled:
             logger.warn('Authorization is not enabled')
             return False
@@ -36,4 +44,6 @@ class DeathnutRestClient(DeathnutClient):
         return True
 
     def execute_if_authorized(self, user, resource_id, enabled, strict, dont_wait, func, *args, **kwargs):
+        if not self._check_auth_required(user, enabled, strict):
+            return func(*args, **kwargs)
         pass

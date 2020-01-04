@@ -1,3 +1,4 @@
+import itertools
 import redis
 
 from deathnut.util.logger import get_deathnut_logger
@@ -6,17 +7,16 @@ from deathnut.util.deathnut_exception import DeathnutException
 logger = get_deathnut_logger(__name__)
 
 class DeathnutClient:
-    def __init__(self, service, resource, redis_connection=None, redis_host='redis',
+    def __init__(self, service, resource_type, redis_connection=None, redis_host='redis', 
             redis_port=6379, redis_pw=None, redis_db=0):
         """
         Parameters
         ----------
         service: str
             Name of calling service. 
-        resource: str
-            Name of REST resource being protected.
-        failure_callback: func
-            Return when authorization fails.
+        resource_type: str
+            Optional name of specific resource being protected, used in the event services have
+            multiple resource types. 
         redis_connection: redis.Redis or redis.Strictredis (deprecated)
             redis client class. Allows deathnut clients to inject their custom redis connection.
             Clients that do not wish to handle their own redis can provide [redis_host, redis_port,
@@ -34,8 +34,10 @@ class DeathnutClient:
             Redis database index
             *Note: used only if redis_connection not provided
         """
-        self._service = service
-        self._resource = resource
+        if resource_type:
+            self._name = '{}_{}'.format(service, resource_type)
+        else:
+            self._name = service
         if redis_connection:
             self._client = redis_connection
         else:
@@ -44,25 +46,25 @@ class DeathnutClient:
             logger.warn('Custom redis connection not passed, will use standard at {}:{}'.format(redis_host, redis_port))
             self._client = redis.Redis(host=redis_host, port=redis_port, password=redis_pw, db=redis_db)
         self._client.ping()
-
-    def _check_auth(self, user, role=None, resource_id=None):
-        if user == 'Unauthenticated':
-            return False
-        if resource_id:
-            return self._client.hget('{}:{}'.format(user,role), resource_id)
-        return True
     
     def assign_role(self, user, role, resource_id):
-        if user == 'Unauthenticated':
-            logger.error('Unauthenticated users cannot be assigned roles')
-            return False
+        self._client.hset('{}:{}:{}'.format(self._name, user, role), resource_id, 'T')
 
     def check_role(self, user, role, resource_id):
-        pass
-        #if self._check_auth(user, enabled, strict)
+        return bool(self._client.hget('{}:{}:{}'.format(self._name, user,role), resource_id))
     
     def revoke_role(self, user, role, resource_id):
-        pass
+        self._client.hdel('{}:{}:{}'.format(self._name, user, role), resource_id)
 
-    def get_resources(self, user, role):
-        pass
+    def get_resources(self, user, role, page_size=10):
+        #return self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role))
+        #yield self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=limit)
+        # gen = self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=5)
+        # limited_gen = itertools.islice(gen, 10)
+        # yield list(limited_gen)
+        # for resource in self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=5):
+        #yield list(itertools.islice(self._client.hscan_iter('{}:{}:{}'.format(self._name, user, role), count=limit), 10))
+        cursor = 0
+        while True:
+            yield self._client.hscan('{}:{}:{}'.format(self._name, user, role), cursor=cursor, count=page_size)
+            cursor += page_size

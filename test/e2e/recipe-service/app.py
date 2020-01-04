@@ -1,6 +1,4 @@
 import argparse
-import logging
-import sys
 import json
 import base64
 
@@ -9,18 +7,12 @@ from flask_apispec import MethodResource, doc, marshal_with, use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from marshmallow import Schema, fields
 
-from deathnut import rest_authorization
+from deathnut.interface.rest_interface import RestAuthorization
+from deathnut.util.logger import get_deathnut_logger
 from generate_template import generate_template_from_app
 
-logging.getLogger().setLevel(logging.INFO)
-logger = logging.getLogger(__name__)
-formatter = logging.Formatter('%(asctime)s %(levelname)-8s %(message)s')
-handler = logging.StreamHandler(sys.stdout)
-handler.setFormatter(formatter)
-handler.setLevel(logging.INFO)
-logger.addHandler(handler)
-
-auth_o = rest_authorization.RestAuthorization(service='example',resource='recipe', enabled=True, strict=False)
+logger = get_deathnut_logger(__name__)
+auth_o = RestAuthorization(service='example',resource='recipe', enabled=True, strict=False)
 
 class RecipeSchema(Schema):
     class Meta:
@@ -28,7 +20,6 @@ class RecipeSchema(Schema):
     id = fields.Integer(description='Recipe id', required=False)
     title = fields.String(description='Recipe title', required=True)
     ingredients = fields.List(fields.String(), description='Recipe ingredients', required=True)
-
 
 recipe_db = [
     {"id": 0, "title": "Michael's famous peanut butter and jelly", "ingredients": ["pb", "j"]},
@@ -46,7 +37,6 @@ def get(id, **kwargs):
     return recipe_db[id], 200
 
 # How do we know if a recipe should be public or restricted?
-# Unprotected since any auth'd user can edit a recipe.
 @app.route('/recipe', methods=('POST',))
 @use_kwargs(RecipeSchema, locations=('json',))
 @marshal_with(RecipeSchema)

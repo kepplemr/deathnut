@@ -18,4 +18,4 @@ except ImportError:
 # logger.addHandler(handler)
 
 def get_deathnut_logger(name):
-    return logging.getLogger(__name__)
+    return logging.getLogger(name)

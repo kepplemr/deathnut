@@ -1,24 +1,46 @@
 import fakeredis
 import unittest
+import uuid
 
+from deathnut.util.logger import get_deathnut_logger
 from deathnut.client.deathnut_client import DeathnutClient
 
+logger = get_deathnut_logger(__name__)
 fake_redis_conn = fakeredis.FakeStrictRedis()
-
-dn_client = DeathnutClient(service='test', resource='recipes', redis_connection=fake_redis_conn)
+dn_client = DeathnutClient(service='test', resource_type='recipes', redis_connection=fake_redis_conn)
 
 class TestBaseDeathnutClient(unittest.TestCase):
+    def setUp(self):
+        fake_redis_conn.flushall()
+
     def test_assign_role(self):
-        pass
+        random_resource_id = str(uuid.uuid4())
+        dn_client.assign_role('test_user', 'own', random_resource_id)
+        self.assertTrue(fake_redis_conn.hget('test_recipes:test_user:own', random_resource_id))
+        self.assertFalse(fake_redis_conn.hget('test_recipes:test_user:own', '42'))
 
     def test_check_role(self):
-        pass
+        random_resource_id = str(uuid.uuid4())
+        self.assertFalse(dn_client.check_role('test_user', 'own', random_resource_id))
+        dn_client.assign_role('test_user', 'own', random_resource_id)
+        self.assertTrue(fake_redis_conn.hget('test_recipes:test_user:own', random_resource_id))
+        self.assertTrue(dn_client.check_role('test_user', 'own', random_resource_id))
 
     def test_revoke_role(self):
-        pass
+        random_resource_id = str(uuid.uuid4())
+        self.assertFalse(dn_client.check_role('test_user', 'own', random_resource_id))
+        dn_client.assign_role('test_user', 'own', random_resource_id)
+        self.assertTrue(fake_redis_conn.hget('test_recipes:test_user:own', random_resource_id))
+        self.assertTrue(dn_client.check_role('test_user', 'own', random_resource_id))
+        dn_client.revoke_role('test_user', 'own', random_resource_id)
+        self.assertFalse(fake_redis_conn.hget('test_recipes:test_user:own', random_resource_id))
+        self.assertFalse(dn_client.check_role('test_user', 'own', random_resource_id))
 
     def test_get_resources(self):
-        pass
-
-    def test_basic_flow(self):
-        pass
+        for _ in range(25):
+            random_resource_id = str(uuid.uuid4())
+            dn_client.assign_role('test_user', 'view', random_resource_id)
+        # for page in dn_client.get_resources('test_user', 'view', page_size=10):
+        #     logger.warn('Page -> ' + str(page))
+        assert(True==False)
+        
