@@ -33,14 +33,14 @@ def generate_jwt(sa_keyfile,
 def make_regular_request(method, url, data=None):
     headers = {'content-type': 'application/json'}
     response = method(url, headers=headers, data=json.dumps(data))
-    #print(str(response.text))
+    print(str(response.text))
     response.raise_for_status()
     return response.text
 
 def make_jwt_request(method, url, signed_jwt, data=None):
     headers = {'Authorization': 'Bearer {}'.format(signed_jwt.decode('utf-8')), 'content-type': 'application/json'}
     response = method(url, headers=headers, data=json.dumps(data))
-    #print(str(response.text))
+    print(str(response.text))
     response.raise_for_status()
     return response.text
 

@@ -2,12 +2,15 @@ import logging
 import sys
 
 root_logger = logging.getLogger()
+root_logger.setLevel(logging.INFO)
 
 try:
     import sofrito
     root_logger.handlers = [sofrito.stackdriver_logging.stackdriver_handler('deathnut')]
 except ImportError:
     root_logger.handlers = [logging.StreamHandler(sys.stdout)]
+except:
+    root_logger.handlers = [sofrito.stackdriver_logging.stackdriver_handler()]
 
 # logging.getLogger().setLevel(logging.INFO)
 # logger = logging.getLogger(__name__)

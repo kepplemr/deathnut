@@ -38,6 +38,19 @@ definitions:
         description: Recipe title
         type: string
     type: object
+  Share:
+    properties:
+      id:
+        description: Recipe id
+        format: int32
+        type: integer
+      user:
+        description: Recipe title
+        type: string
+    required:
+    - id
+    - user
+    type: object
 paths:
   /recipe:
     post:
@@ -85,6 +98,20 @@ paths:
           description: ''
           schema:
             $ref: '#/definitions/Recipe'
+  /share:
+    post:
+      operationId: post_share
+      parameters:
+      - in: body
+        name: body
+        required: false
+        schema:
+          $ref: '#/definitions/Share'
+      responses:
+        default:
+          description: ''
+          schema:
+            $ref: '#/definitions/Share'
 securityDefinitions:
   # calling service - rename
   recipe-service-jwt:

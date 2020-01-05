@@ -62,7 +62,7 @@ class DeathnutRestClient(DeathnutClient):
 
     def _deathnut_checks_successful(self, user, func, *args, **kwargs):
         """adds deathnut_calling_user to kwargs"""
-        kwargs.update(deathnut_calling_user=user)
+        kwargs.update(deathnut_calling_user=user, deathnut_user=user)
         return func(*args, **kwargs)
     
     def execute_if_authorized(self, user, role, resource_id, enabled, strict, dont_wait, func, *args, **kwargs):
@@ -73,7 +73,7 @@ class DeathnutRestClient(DeathnutClient):
                 # TODO only one needs to be on another thread?
                 # TODO what if assign used within here on GET
                 fetched_result = ex.submit(func, *args, **kwargs)
-                is_authorized = ex.submit(self._is_authorized, user, role, resource_id, enabled, strict)
+                is_authorized = ex.submit(self._is_authorized, user, role, resource_id)
                 if is_authorized.result():
                     return fetched_result.result()
                 return self._on_failure()

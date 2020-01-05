@@ -15,9 +15,11 @@ from deathnut.util.logger import get_deathnut_logger
 logger = get_deathnut_logger(__name__)
 
 class RestAuthorization:
-    def __init__(self, service, resource, strict=True, enabled=True, redis_host='redis', 
-            redis_port=6379, redis_pw=None, redis_db=0):
-        self._dnr_client = DeathnutRestClient(service, resource, strict, enabled, redis_host, redis_port, redis_pw, redis_db)
+    def __init__(self, service, resource_type=None, failure_callback=None, strict=True,
+            enabled=True, redis_connection=None, redis_host='redis', redis_port=6379, redis_pw=None, 
+            redis_db=0):
+        self._dnr_client = DeathnutRestClient(service, resource_type, failure_callback, strict, 
+            enabled, redis_connection, redis_host, redis_port, redis_pw, redis_db)
 
     def _get_auth_arguments(self, request, **kwargs):
         enabled = kwargs.get('enabled', self._dnr_client.get_enabled())
@@ -33,7 +35,7 @@ class RestAuthorization:
                 user, enabled, strict = self._get_auth_arguments(request, **kwargs)
                 # if request is a GET, fetch resource asynchronously and return if authorized.
                 dont_wait = kwargs.get('dont_wait', request.method == 'GET')
-                return self._dnr_client.execute_if_authorized(user, resource_id, enabled, strict, dont_wait, func, *args, **kwargs)
+                return self._dnr_client.execute_if_authorized(user, role, resource_id, enabled, strict, dont_wait, func, *args, **kwargs)
             return wrapped
         return decorator 
     
@@ -53,10 +55,10 @@ class RestAuthorization:
             return wrapped
         return decorator
     
-    def assign_roles(self, roles, resource_id, **kwargs):
+    def assign_roles(self, resource_id, roles, **kwargs):
         return self._change_roles(self._dnr_client.assign_role, roles, resource_id, **kwargs)
     
-    def revoke_roles(self, roles, resource_id, **kwargs):
+    def revoke_roles(self, resource_id, roles, **kwargs):
         return self._change_roles(self._dnr_client.revoke_role, roles, resource_id, **kwargs)
     
     def _change_roles(self, action, roles, resource_id, **kwargs):
@@ -64,7 +66,6 @@ class RestAuthorization:
             logger.warn('Unauthenticated user attempt to update roles')
             return
         user = kwargs.get('deathnut_user', '')
-        roles = kwargs.get('roles', None)
         if roles:
             for role in roles:
                 action(user, role, resource_id)               
