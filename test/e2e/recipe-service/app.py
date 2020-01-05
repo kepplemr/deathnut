@@ -70,7 +70,7 @@ def handle_error(err):
 
 def create_app():
     FlaskApiSpec(app).register_existing_resources()
-    generate_template_from_app(app, force_run=True)
+    #generate_template_from_app(app, force_run=True)
     app.run(debug=True, port=80, host='0.0.0.0')
 
 if __name__ == "__main__":

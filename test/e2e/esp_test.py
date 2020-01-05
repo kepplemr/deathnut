@@ -4,16 +4,13 @@ import requests
 import time
 import json
 
-def generate_jwt(sa_keyfile,
-                 sa_email='jwt-test@wellio-dev-michael.iam.gserviceaccount.com',
-                 audience='recipe-service',
-                 expiry_length=3600):
+def generate_jwt(user, sa_keyfile='keys/jwt-test.json', 
+        sa_email='jwt-test@wellio-dev-michael.iam.gserviceaccount.com', audience='recipe-service', 
+        expiry_length=3600):
     """Generates a signed JSON Web Token using a Google API Service Account."""
     now = int(time.time())
-    # build payload
     payload = {
         'iat': now,
-        # expires after 'expiry_length' seconds.
         "exp": now + expiry_length,
         # iss must match 'issuer' in the security configuration in your
         # swagger spec (e.g. service account email). It can be any string.
@@ -22,10 +19,9 @@ def generate_jwt(sa_keyfile,
         # specified as the 'x-google-audience' in the OpenAPI document.
         'aud':  audience,
         # sub and email should match the service account's email address
-        'sub': sa_email,
-        'email': sa_email
+        'sub': user,
+        'email': user
     }
-    # sign with keyfile
     signer = google.auth.crypt.RSASigner.from_service_account_file(sa_keyfile)
     jwt = google.auth.jwt.encode(signer, payload)
     return jwt
@@ -59,7 +55,7 @@ def test_unsecured_requests():
 def test_secured_requests():
     print('Testing secured requests')
     port = 8080
-    jwt = generate_jwt('keys/jwt-test.json')
+    jwt = generate_jwt('michael@test1.com')
     new_recipe = {'title': 'Michael spaghetti', 'ingredients': ['Pasta', 'Sour Cream']}
     new_update = {'ingredients': ['Pasta', 'Tomato Sauce']}
     spaghetti_recipe = make_jwt_request(requests.post, 'http://localhost:{}/recipe'.format(port), jwt, new_recipe)
@@ -68,6 +64,9 @@ def test_secured_requests():
     recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,spaghetti_id), jwt))
     assert(recipe['title'] == 'Michael spaghetti')
     assert(recipe['ingredients'] == ['Pasta', 'Tomato Sauce'])
+
+def test_deathnut():
+    print('Testing deathnut')
 
 def main():
     test_unsecured_requests()
