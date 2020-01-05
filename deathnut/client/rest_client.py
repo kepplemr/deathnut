@@ -68,3 +68,6 @@ class DeathnutRestClient(DeathnutClient):
         if self._is_authorized(user, role, resource_id, enabled, strict):
             return func(*args, **kwargs)
         return self._on_failure()
+    
+    def execute_if_authenticated(self, user, enabled, strict, func, *args, **kwargs):
+        pass
