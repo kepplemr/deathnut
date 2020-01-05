@@ -47,13 +47,21 @@ class DeathnutClient(object):
             self._client = redis.Redis(host=redis_host, port=redis_port, password=redis_pw, db=redis_db)
         self._client.ping()
     
+    def _check_authenticated(self, user):
+        if user == 'Unauthenticated':
+            raise DeathnutException('Unauthenticated user cannot be granted/removed from roles')
+    
     def assign_role(self, user, role, resource_id):
+        self._check_authenticated(user)
+        logger.info('Assigning role <{}> to user <{}> for resource <{}>, id <{}>'.format(role, user, self._name, resource_id))
         self._client.hset('{}:{}:{}'.format(self._name, user, role), resource_id, 'T')
 
     def check_role(self, user, role, resource_id):
         return bool(self._client.hget('{}:{}:{}'.format(self._name, user,role), resource_id))
     
     def revoke_role(self, user, role, resource_id):
+        self._check_authenticated(user)
+        logger.info('Revoking role <{}> from user <{}> for resource <{}>, id <{}>'.format(role, user, self._name, resource_id))
         self._client.hdel('{}:{}:{}'.format(self._name, user, role), resource_id)
 
     def get_resources(self, user, role, page_size=10):

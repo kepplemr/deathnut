@@ -43,7 +43,8 @@ class DeathnutRestClient(DeathnutClient):
     def _failure_callback(self):
         return {'message':'Failed'}, 401
 
-    def _check_auth_required(self, user, enabled, strict):
+    def _is_auth_required(self, user, enabled, strict):
+        """ id this is true, do not return wrapped function"""
         if not enabled:
             logger.warn('Authorization is not enabled')
             return False
@@ -51,23 +52,38 @@ class DeathnutRestClient(DeathnutClient):
             logger.warn('Strict auth checking disabled, granting access to unauthenticated user')
             return False
         return True
-    
-    def _is_authorized(self, user, role, resource_id, enabled, strict):
-        if not self._check_auth_required(user, enabled, strict):
-            return True
+
+    def _is_authorized(self, user, role, resource_id):
+        """user is authenticated and has access to resource"""
         return self.check_role(user, role, resource_id)
     
+    def _is_authenticated(self, user):
+        return user != 'Unauthenticated'        
+
+    def _deathnut_checks_successful(self, user, func, *args, **kwargs):
+        """adds deathnut_calling_user to kwargs"""
+        kwargs.update(deathnut_calling_user=user)
+        return func(*args, **kwargs)
+    
     def execute_if_authorized(self, user, role, resource_id, enabled, strict, dont_wait, func, *args, **kwargs):
+        if not self._is_auth_required(user, enabled, strict):
+            return func(*args, **kwargs)
         if dont_wait:
             with ThreadPoolExecutor() as ex:
+                # TODO only one needs to be on another thread?
+                # TODO what if assign used within here on GET
                 fetched_result = ex.submit(func, *args, **kwargs)
-                is_authorized = ex.submit(self._is_authorized, user, resource_id, enabled, strict)
+                is_authorized = ex.submit(self._is_authorized, user, role, resource_id, enabled, strict)
                 if is_authorized.result():
                     return fetched_result.result()
                 return self._on_failure()
-        if self._is_authorized(user, role, resource_id, enabled, strict):
-            return func(*args, **kwargs)
+        if self._is_authorized(user, role, resource_id):
+            return self._deathnut_checks_successful(user, func, *args, **kwargs)
         return self._on_failure()
     
     def execute_if_authenticated(self, user, enabled, strict, func, *args, **kwargs):
-        pass
+        if not self._is_auth_required(user, enabled, strict):
+            return func(*args, **kwargs)
+        if self._is_authenticated(user):
+            return self._deathnut_checks_successful(user, func, *args, **kwargs)
+        return self._on_failure()
