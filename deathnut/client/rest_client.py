@@ -70,7 +70,6 @@ class DeathnutRestClient(DeathnutClient):
             return func(*args, **kwargs)
         if dont_wait:
             with ThreadPoolExecutor() as ex:
-                # TODO only one needs to be on another thread?
                 # TODO what if assign used within here on GET
                 fetched_result = ex.submit(func, *args, **kwargs)
                 is_authorized = ex.submit(self._is_authorized, user, role, resource_id)
