@@ -4,22 +4,22 @@ from flask import Flask, jsonify, request
 from flask_apispec import marshal_with, use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 
-from deathnut.interface.flask_interface import RestAuthorization
+from deathnut.interface.flask.flask_apispec import FlaskAPISpecAuthorization
 from deathnut.util.logger import get_deathnut_logger
+from deathnut.util.deathnut_exception import DeathnutException
 from generate_template import generate_template_from_app
-from schema.app_schemas import RecipeSchema, ShareSchema
+from schema.app_schemas import RecipeSchema, DeathnutAuthSchema
 
 logger = get_deathnut_logger(__name__)
-redis_conn = redis.Redis(host='redis', port=6379)
-auth_o = RestAuthorization(service='example', resource_type='recipe', redis_connection=redis_conn, 
-    enabled=True, strict=False)
-
 recipe_db = [
     {"id": 0, "title": "Michael's famous peanut butter and jelly", "ingredients": ["pb", "j"]},
     {"id": 1, "title": "Grilled fish", "ingredients": ["fish"]}
 ]
 
 app = Flask(__name__)
+redis_conn = redis.Redis(host='redis', port=6379)
+auth_o = FlaskAPISpecAuthorization(app, service='example', resource_type='recipe', 
+    redis_connection=redis_conn, enabled=True, strict=False)
 
 @app.route('/recipe/<int:id>', methods=('GET',))
 @marshal_with(RecipeSchema)
@@ -50,14 +50,15 @@ def patch(id, **kwargs):
         recipe_db[id][kw] = kwargs[kw]
     return recipe_db[id], 200
 
-@app.route('/share', methods=('POST',))
-@use_kwargs(ShareSchema)
-@marshal_with(ShareSchema)
+@app.route('/auth-recipe', methods=('POST',))
+@use_kwargs(DeathnutAuthSchema)
+@marshal_with(DeathnutAuthSchema)
 @auth_o.requires_role('own')
-def share_post(id, user, **kwargs):
-    auth_o.assign_roles(id, ['view'], deathnut_user=user)
-    return {"id": id, "user": user}, 200
+def auth(id, user, role, **kwargs):
+    auth_o.assign_roles(id, [role], deathnut_user=user)
+    return {"id": id, "user": user, "role": role}, 200
 
+@app.errorhandler(401)
 @app.errorhandler(422)
 @app.errorhandler(400)
 def handle_error(err):

@@ -1,4 +1,3 @@
-
 from marshmallow import Schema, fields
 
 class RecipeSchema(Schema):
@@ -8,8 +7,9 @@ class RecipeSchema(Schema):
     title = fields.String(description='Recipe title', required=True)
     ingredients = fields.List(fields.String(), description='Recipe ingredients', required=True)
 
-class ShareSchema(Schema):
+class DeathnutAuthSchema(Schema):
     class Meta:
         strict = True
-    id = fields.Integer(description='Recipe id', required=True)
-    user = fields.String(description='Recipe title', required=True)
+    id = fields.Integer(description='Resource id', required=True)
+    user = fields.String(description='User to assign role to', required=True)
+    role = fields.String(description='The role being assigned', required=True)

@@ -9,7 +9,6 @@ def generate_jwt(user, sa_keyfile='keys/jwt-test.json',
         expiry_length=3600):
     """Generates a signed JSON Web Token using a Google API Service Account."""
     now = int(time.time())
-
     payload = {
         'iat': now,
         "exp": now + expiry_length,
@@ -31,38 +30,35 @@ def make_regular_request(method, url, data=None):
     response = method(url, headers=headers, data=json.dumps(data))
     print(str(response.text))
     response.raise_for_status()
-    return response.text
+    return response
 
 def make_jwt_request(method, url, signed_jwt, data=None):
     headers = {'Authorization': 'Bearer {}'.format(signed_jwt.decode('utf-8')), 'content-type': 'application/json'}
     #print('Headers -> ' + str(headers))
     response = method(url, headers=headers, data=json.dumps(data))
     print(str(response.text))
-    response.raise_for_status()
-    return response.text
+    return response
 
 def test_unsecured_requests():
-    print('Testing unsecured requests')
     port = 80
     new_recipe = {'title': 'Michael Cold Brew', 'ingredients': ['Soda', 'Coffee']}
     new_update = {'ingredients': ['Water', 'Coffee']}
     cold_brew_recipe = make_regular_request(requests.post, 'http://localhost:{}/recipe'.format(port), new_recipe)
-    cold_brew_id = json.loads(cold_brew_recipe)['id']
+    cold_brew_id = json.loads(cold_brew_recipe.text)['id']
     make_regular_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,cold_brew_id), new_update)
-    recipe = json.loads(make_regular_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,cold_brew_id)))
+    recipe = json.loads(make_regular_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,cold_brew_id)).text)
     assert(recipe['title'] == 'Michael Cold Brew')
     assert(recipe['ingredients'] == ['Water', 'Coffee'])
 
 def test_secured_requests():
-    print('Testing secured requests')
     port = 8080
     jwt = generate_jwt('michael')
     new_recipe = {'title': 'Michael spaghetti', 'ingredients': ['Pasta', 'Sour Cream']}
     new_update = {'ingredients': ['Pasta', 'Tomato Sauce']}
     spaghetti_recipe = make_jwt_request(requests.post, 'http://localhost:{}/recipe'.format(port), jwt, new_recipe)
-    spaghetti_id = json.loads(spaghetti_recipe)['id']
+    spaghetti_id = json.loads(spaghetti_recipe.text)['id']
     make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,spaghetti_id), jwt, new_update)
-    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,spaghetti_id), jwt))
+    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,spaghetti_id), jwt).text)
     assert(recipe['title'] == 'Michael spaghetti')
     assert(recipe['ingredients'] == ['Pasta', 'Tomato Sauce'])
 
@@ -74,16 +70,23 @@ def test_deathnut():
     # user1 creates, edits, and gets a new recipe
     new_recipe = {'title': 'Pierogis', 'ingredients': ['potatoes', 'cream or whatever']}
     new_update = {'ingredients': ['potatoes', 'cream']}
-    pierogi_recipe = make_jwt_request(requests.post, 'http://localhost:{}/recipe'.format(port), user_1, new_recipe)
-    pierogi_id = json.loads(pierogi_recipe)['id']
+    pierogi_id = json.loads(make_jwt_request(requests.post, 'http://localhost:{}/recipe'.format(port), user_1, new_recipe).text)['id']
     make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_1, new_update)
-    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_1))
+    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_1).text)
     assert(recipe['title'] == 'Pierogis')
     assert(recipe['ingredients'] == ['potatoes', 'cream'])
     # user2 attempts to get and update the newly created recipe
     another_update = {'ingredients': ['potatoes', 'cream', 'cheddar']}
-    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2))
-    make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2, new_update)
+    fail_get = make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2)
+    assert(fail_get.status_code == 401)
+    assert(json.loads(fail_get.text)['message'] == 'Not authorized')
+    fail_patch = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2, another_update)
+    assert(fail_patch.status_code == 401)
+    assert(json.loads(fail_patch.text)['message'] == 'Not authorized')
+    # user1 grants user2 'view' privilege
+    auth_grant = {'id': pierogi_id, 'role': 'view', 'user': 'jennifer'}
+    make_jwt_request(requests.post, 'http://localhost:{}/auth-recipe'.format(port), user_1, auth_grant)
+    #print(str(failure))
     print('Testing deathnut')
 
 def main():
