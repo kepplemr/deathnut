@@ -15,10 +15,10 @@ from deathnut.util.logger import get_deathnut_logger
 logger = get_deathnut_logger(__name__)
 
 class FlaskAuthorization(object):
-    def __init__(self, service, resource_type=None, strict=True, enabled=True, 
-            redis_connection=None, redis_host='redis', redis_port=6379, redis_pw=None, redis_db=0):
-        self._dnr_client = DeathnutRestClient(service, resource_type, strict, enabled, 
-            redis_connection, redis_host, redis_port, redis_pw, redis_db)
+    """Base class containing flask-specific logic"""
+
+    def __init__(self, service, resource_type=None, strict=True, enabled=True, redis_connection=None):
+        self._dnr_client = DeathnutRestClient(service, resource_type, strict, enabled, redis_connection=redis_connection)
 
     def _get_auth_arguments(self, request, **kwargs):
         enabled = kwargs.get('enabled', self._dnr_client.get_enabled())

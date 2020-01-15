@@ -20,6 +20,7 @@ app = Flask(__name__)
 redis_conn = redis.Redis(host='redis', port=6379)
 auth_o = FlaskAPISpecAuthorization(app, service='example', resource_type='recipe', 
     redis_connection=redis_conn, enabled=True, strict=False)
+auth_o.create_auth_endpoint('/auth-recipe', 'own', 'view')
 
 @app.route('/recipe/<int:id>', methods=('GET',))
 @marshal_with(RecipeSchema)
@@ -49,14 +50,6 @@ def patch(id, **kwargs):
     for kw in kwargs:
         recipe_db[id][kw] = kwargs[kw]
     return recipe_db[id], 200
-
-@app.route('/auth-recipe', methods=('POST',))
-@use_kwargs(DeathnutAuthSchema)
-@marshal_with(DeathnutAuthSchema)
-@auth_o.requires_role('own')
-def auth(id, user, role, **kwargs):
-    auth_o.assign_roles(id, [role], deathnut_user=user)
-    return {"id": id, "user": user, "role": role}, 200
 
 @app.errorhandler(401)
 @app.errorhandler(422)

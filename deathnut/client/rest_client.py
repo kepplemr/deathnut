@@ -9,8 +9,7 @@ from deathnut.util.deathnut_exception import DeathnutException
 logger = get_deathnut_logger(__name__)
 
 class DeathnutRestClient(DeathnutClient):
-    def __init__(self, service, resource_type=None, strict=True, enabled=True,
-            redis_connection=None, redis_host='redis', redis_port=6379, redis_pw=None, redis_db=0):
+    def __init__(self, service, resource_type=None, strict=True, enabled=True, **kwargs):
         """
         Parameters
         ----------
@@ -25,7 +24,7 @@ class DeathnutRestClient(DeathnutClient):
         """
         self._strict = strict
         self._enabled = enabled
-        super(DeathnutRestClient, self).__init__(service, resource_type, redis_connection, redis_host, redis_port, redis_pw, redis_db)
+        super(DeathnutRestClient, self).__init__(service, resource_type, **kwargs)
     
     def get_strict(self):
         return self._strict
@@ -34,7 +33,7 @@ class DeathnutRestClient(DeathnutClient):
         return self._enabled
 
     def _is_auth_required(self, user, enabled, strict):
-        """ id this is true, do not return wrapped function"""
+        """if this is true, do not return wrapped function"""
         if not enabled:
             logger.warn('Authorization is not enabled')
             return False
@@ -55,24 +54,64 @@ class DeathnutRestClient(DeathnutClient):
         kwargs.update(deathnut_calling_user=user, deathnut_user=user)
         return func(*args, **kwargs)
     
-    def execute_if_authorized(self, user, role, resource_id, enabled, strict, dont_wait, func, *args, **kwargs):
-        if not self._is_auth_required(user, enabled, strict):
-            return func(*args, **kwargs)
-        if dont_wait:
+    def execute_if_authorized(self, dn_user, dn_role, dn_rid, dn_enabled, dn_strict, dn_dont_wait, 
+        dn_func, *args, **kwargs):
+        """
+        Executes a wrapped function if a user has the required role for a given resource_id.
+
+        Note: args for wrapped function are passed in args, kwargs. Wrapped functions should not use
+        dn_* vars.
+
+        Parameters
+        ----------
+        dn_user: str
+            The user seeking access.
+        dn_role: str
+            The role needed to access the resource id.
+        dn_rid: str
+            The resource id being sought.
+        dn_enabled: bool
+            Whether deathnut is enabled.
+        dn_strict: bool
+            Whether deathnut, if enabled, will allow access to unauthenticated users.
+        dn_func: function
+            The wrapped function.
+        """
+        if not self._is_auth_required(dn_user, dn_enabled, dn_strict):
+            return dn_func(*args, **kwargs)
+        if dn_dont_wait:
             with ThreadPoolExecutor() as ex:
                 # TODO what if assign used within here on GET
-                fetched_result = ex.submit(func, *args, **kwargs)
-                is_authorized = ex.submit(self._is_authorized, user, role, resource_id)
+                fetched_result = ex.submit(dn_func, *args, **kwargs)
+                is_authorized = ex.submit(self._is_authorized, dn_user, dn_role, dn_rid)
                 if is_authorized.result():
                     return fetched_result.result()
                 raise DeathnutException('Not authorized')
-        if self._is_authorized(user, role, resource_id):
-            return self._deathnut_checks_successful(user, func, *args, **kwargs)
+        if self._is_authorized(dn_user, dn_role, dn_rid):
+            return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
         raise DeathnutException('Not authorized')
     
-    def execute_if_authenticated(self, user, enabled, strict, func, *args, **kwargs):
-        if not self._is_auth_required(user, enabled, strict):
-            return func(*args, **kwargs)
-        if self._is_authenticated(user):
-            return self._deathnut_checks_successful(user, func, *args, **kwargs)
+    def execute_if_authenticated(self, dn_user, dn_enabled, dn_strict, dn_func, *args, **kwargs):
+        """
+        Executes a wrapped function if a user is authenticated (not authorization checks).
+
+        Note: args for wrapped function are passed in args, kwargs. Wrapped functions should not use
+        dn_* vars.
+
+        Parameters
+        ----------
+        dn_user: str
+            The username seeking access to function. This will be 'unauthenticated' if no auth
+            was performed.
+        dn_enabled: bool
+            Whether deathnut is enabled.
+        dn_strict: bool
+            Whether deathnut, if enabled, will allow access to unauthenticated users.
+        dn_func: function
+            The wrapped function.
+        """
+        if not self._is_auth_required(dn_user, dn_enabled, dn_strict):
+            return dn_func(*args, **kwargs)
+        if self._is_authenticated(dn_user):
+            return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
         raise DeathnutException('No authentication provided')
