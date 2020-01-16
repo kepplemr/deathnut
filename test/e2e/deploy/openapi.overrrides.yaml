@@ -1,0 +1,6 @@
+filename: openapi.recipe-service.yaml
+host: recipe-service.endpoints.wellio-dev-michael.cloud.goog
+info:
+  description: Example recipe service
+  title: Recipe Service
+

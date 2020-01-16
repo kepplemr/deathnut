@@ -4,7 +4,7 @@ docker build --no-cache -t recipe-service -f Dockerfile .
 
 docker run -dp 6379:6379 --name redis redis
 
-docker run -dp 80:80 -v $(pwd)/keys:/keys -v $(pwd)/../../deathnut:/deathnut \
+docker run -dp 80:80 -v $(pwd)/keys:/keys -v $(pwd)/../../deathnut:/deathnut $(pwd)/deploy:/deploy \
   --link redis:redis --name recipe-service recipe-service
 
 docker run --detach -v $(pwd)/keys:/keys -p 8080:8080 \
