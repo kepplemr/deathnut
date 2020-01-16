@@ -1,6 +1,8 @@
-filename: openapi.recipe-service.yaml
+filename: openapi.recipe-service-deploy.yaml
 host: recipe-service.endpoints.wellio-dev-michael.cloud.goog
 info:
   description: Example recipe service
   title: Recipe Service
+security:
+  - firebase-whatever-production: []
 

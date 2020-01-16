@@ -110,6 +110,7 @@ def _create_template_from_app(app, template_output, swagger_spec_url):
     _handle_trailing_slashes(template_dict)
     _handle_operationIds(template_dict)
     _handle_body_arrays(template_dict)
+    _remove_options_operations(template_dict)
     _write_openapi_template(template_output, template_dict)
 
 
@@ -132,6 +133,17 @@ def _handle_trailing_slashes(template_dict):
     for path in list(template_dict['paths']): 
         if path.endswith('/'):
             del template_dict['paths'][path]
+
+
+def _remove_options_operations(template_dict):
+    """
+    Remove 'options' operations from endpoint spec
+    """
+    for path in list(template_dict['paths']):
+        logging.info('Path -> ' + str(path))
+        for operation in list(template_dict['paths'][path]):
+            if operation == 'options':
+                del template_dict['paths'][path][operation]
 
 
 def _handle_operationIds(template_dict):
