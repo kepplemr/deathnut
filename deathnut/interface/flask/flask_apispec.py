@@ -6,6 +6,10 @@ from deathnut.util.redis import get_redis_connection
 from deathnut.util.deathnut_exception import DeathnutException
 from .flask_base import FlaskAuthorization
 
+from deathnut.util.logger import get_deathnut_logger
+
+logger = get_deathnut_logger(__name__)
+
 class DeathnutAuthSchema(Schema):
     class Meta:
         strict = True
@@ -40,7 +44,8 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         @marshal_with(DeathnutAuthSchema)
         @self.requires_role(requires_role, strict=True)
         def auth(id, user, role, **kwargs):
-            self.assign_roles(id, [role], deathnut_user=user)
+            kwargs.update(deathnut_user=user)
+            self.assign_roles(id, [role], **kwargs)
             return {"id": id, "user": user, "role": role}, 200
         return auth
 

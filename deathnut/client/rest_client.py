@@ -49,10 +49,12 @@ class DeathnutRestClient(DeathnutClient):
     def _is_authenticated(self, user):
         return user != 'Unauthenticated'        
 
-    def _deathnut_checks_successful(self, user, func, *args, **kwargs):
+    def _deathnut_checks_successful(self, dn_user, dn_func, *args, **kwargs):
         """adds deathnut_calling_user to kwargs"""
-        kwargs.update(deathnut_calling_user=user, deathnut_user=user)
-        return func(*args, **kwargs)
+        logger.warn("Kwargs before -> " + str(kwargs))
+        kwargs.update(deathnut_calling_user=dn_user, deathnut_user=dn_user)
+        logger.warn("Kwargs after -> " + str(kwargs))
+        return dn_func(*args, **kwargs)
     
     def execute_if_authorized(self, dn_user, dn_role, dn_rid, dn_enabled, dn_strict, dn_dont_wait, 
         dn_func, *args, **kwargs):

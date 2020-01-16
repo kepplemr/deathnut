@@ -2,13 +2,27 @@ version: '2'
 services:
   redis:
     image: redis:3.2.5-alpine
+    container_name: redis
     ports:
       - "6379:6379"
-
-  # esp:
-  #   build: TODO
-  
-  deathnut-example:
+  recipe-service:
     build: .
-    depends_on:
-      - redis
+    image: recipe-service
+    container_name: recipe-service
+    ports:
+      - "80:80"
+    volumes:
+      - ./keys:/keys
+      - ../../deathnut:/deathnut
+      - ./deploy:/recipe-service/deploy
+    links:
+      - "redis"
+  esp:
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    container_name: esp
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./keys:/keys
+    command: ["--service=recipe-service.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed", 
+    "--backend=recipe-service:80", "--http_port=8080", "--service_account_key=/keys/jwt-test.json"]

@@ -85,17 +85,14 @@ def test_deathnut():
     assert(json.loads(fail_patch.text)['message'] == 'Not authorized')
     # user1 grants user2 'view' privilege
     auth_grant = {'id': pierogi_id, 'role': 'view', 'user': 'jennifer'}
-    # TODO temp hack
-    port = 80
     make_jwt_request(requests.post, 'http://localhost:{}/auth-recipe'.format(port), user_1, auth_grant)
-    port = 8080
     # user2 still cannot patch, but can view, the recipe
     fail_patch = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2, another_update)
     assert(fail_patch.status_code == 401)
     assert(json.loads(fail_patch.text)['message'] == 'Not authorized')
-    # recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2).text)
-    # assert(recipe['title'] == 'Pierogis')
-    # assert(recipe['ingredients'] == ['potatoes', 'cream'])
+    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2).text)
+    assert(recipe['title'] == 'Pierogis')
+    assert(recipe['ingredients'] == ['potatoes', 'cream'])
 
 def generate_and_deploy_openapi_spec():
     pass

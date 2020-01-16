@@ -1,1 +1,1 @@
-gcloud endpoints services deploy openapi.recipe_service.yaml
+gcloud endpoints services deploy openapi.recipe-service-deploy.yaml 
