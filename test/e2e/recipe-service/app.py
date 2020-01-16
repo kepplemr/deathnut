@@ -7,7 +7,7 @@ from flask_apispec.extension import FlaskApiSpec
 from deathnut.interface.flask.flask_apispec import FlaskAPISpecAuthorization
 from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.deathnut_exception import DeathnutException
-from generate_template import generate_template_from_app
+from generate_openapi.generate_template import generate_openapi_template
 from schema.app_schemas import RecipeSchema, DeathnutAuthSchema
 
 logger = get_deathnut_logger(__name__)
@@ -62,10 +62,11 @@ def handle_error(err):
     else:
         return jsonify({"errors": messages}), err.code
 
+@generate_openapi_template
 def create_app():
     FlaskApiSpec(app).register_existing_resources()
-    #generate_template_from_app(app, force_run=True)
-    app.run(debug=True, port=80, host='0.0.0.0')
+    return app
 
 if __name__ == "__main__":
-    create_app()
+    app = create_app()
+    app.run(debug=True, port=80, host='0.0.0.0')

@@ -8,11 +8,12 @@ to nine (flask app and jwt and non-jwt OpenAPI spec for each env).
 import argparse
 import json
 import logging
+import os
 import sys
 
 import yaml
 
-from generate_configs import dict_merge
+from generate_openapi.generate_configs import dict_merge
 
 default_file_location = 'deploy/openapi/openapi.generated.yaml'
 
@@ -39,6 +40,9 @@ def generate_template_from_app(app, template_output=None, force_run=False):
     convenient for a service to pass application object directly.
     template will be generated if '--generate-openapi-template' arg is detected or force_run is set.
     force_run is mostly convenient for integration/etc testing. 
+
+    Never use force_run if you subsequently want to run the actual app (it will re-generate and run
+    the test_client on stat reload caused by the spec write).
     """
     flags = _handle_arg_parsing()
     template_output = template_output or flags.openapi_template_output
@@ -176,84 +180,10 @@ def _handle_body_arrays(template_dict):
 
 
 def _get_dict_with_defaults():
-    default_dict = {'securityDefinitions': {'api_key': {
-        'type': 'apiKey', 'name': 'key', 'in': 'query'}}}
-    default_dict.update({'schemes': ['http', 'https']})
-    default_dict.update({'security': [{'api_key': []}]})
-    dict_merge(
-        default_dict, {
-            'securityDefinitions': {
-                'firebase_feinschmecker_integration': {
-                    'x-google-issuer': 'https://securetoken.google.com/fenschmecker-integration',
-                    'x-google-audiences': 'fenschmecker-integration'
-                }
-            }
-        })
-    dict_merge(
-        default_dict, {
-            'securityDefinitions': {
-                'firebase_fridge_to_table_integration': {
-                    'x-google-issuer':
-                        'https://securetoken.google.com/fridge-to-table-integration',
-                    'x-google-audiences':
-                        'fridge-to-table-integration'
-                }
-            }
-        })
-    dict_merge(
-        default_dict, {
-            'securityDefinitions': {
-                'firebase_feinschmecker_staging': {
-                    'x-google-issuer': 'https://securetoken.google.com/fenschmecker-staging',
-                    'x-google-audiences': 'fenschmecker-staging'
-                }
-            }
-        })
-    dict_merge(
-        default_dict, {
-            'securityDefinitions': {
-                'firebase_fridge_to_table_staging': {
-                    'x-google-issuer': 'https://securetoken.google.com/fridge-to-table-staging',
-                    'x-google-audiences': 'fridge-to-table-staging'
-                }
-            }
-        })
-    dict_merge(
-        default_dict, {
-            'securityDefinitions': {
-                'firebase_feinschmecker_production': {
-                    'x-google-issuer': 'https://securetoken.google.com/fenschmecker-production',
-                    'x-google-audiences': 'fenschmecker-production'
-                }
-            }
-        })
-    dict_merge(
-        default_dict, {
-            'securityDefinitions': {
-                'firebase_fridge_to_table_production': {
-                    'x-google-issuer':
-                        'https://securetoken.google.com/fridge-to-table-production',
-                    'x-google-audiences':
-                        'fridge-to-table-production'
-                }
-            }
-        })
-    for env in [
-            'firebase_feinschmecker_integration', 'firebase_fridge_to_table_integration',
-            'firebase_feinschmecker_staging', 'firebase_fridge_to_table_staging',
-            'firebase_feinschmecker_production', 'firebase_fridge_to_table_production'
-    ]:
-        dict_merge(
-            default_dict['securityDefinitions'][env], {
-                'x-google-jwks_uri':
-                    'https://www.googleapis.com/service_accounts/v1/metadata/x509/securetoken@system.gserviceaccount.com',
-                'flow':
-                    'implicit',
-                'type':
-                    'oauth2',
-                'authorizationUrl':
-                    ''
-            })
+    default_dict = {}
+    default_path = '/'.join([os.path.dirname(os.path.realpath(__file__)), 'defaults.yaml'])
+    with open(default_path, 'r') as cfg_f:
+        default_dict = dict(**yaml.safe_load(cfg_f))
     return default_dict
 
 

@@ -113,8 +113,7 @@ paths:
           schema:
             $ref: '#/definitions/Share'
 securityDefinitions:
-  # calling service - rename
-  recipe-service-jwt:
+  firebase-whatever-production:
     authorizationUrl: ""
     flow: "implicit"
     type: "oauth2"

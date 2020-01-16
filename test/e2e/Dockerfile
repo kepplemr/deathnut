@@ -13,4 +13,4 @@ ENV PYTHONPATH $PYTHONPATH:/
 
 EXPOSE 80
 
-CMD ["python" , "/recipe-service/app.py" ]
+CMD ["python" , "/recipe-service/app.py", "--generate-openapi-template"]
