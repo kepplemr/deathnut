@@ -62,12 +62,11 @@ def test_secured_requests():
     assert(recipe['title'] == 'Michael spaghetti')
     assert(recipe['ingredients'] == ['Pasta', 'Tomato Sauce'])
 
-def test_deathnut():
-    print('Testing deathnut')
+def test_deathnut_basics():
     port = 8080
     user_1 = generate_jwt('michael')
     user_2 = generate_jwt('jennifer')
-    # user1 creates, edits, and gets a new recipe
+    # michael creates, edits, and gets a new recipe
     new_recipe = {'title': 'Pierogis', 'ingredients': ['potatoes', 'cream or whatever']}
     new_update = {'ingredients': ['potatoes', 'cream']}
     pierogi_id = json.loads(make_jwt_request(requests.post, 'http://localhost:{}/recipe'.format(port), user_1, new_recipe).text)['id']
@@ -75,7 +74,7 @@ def test_deathnut():
     recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_1).text)
     assert(recipe['title'] == 'Pierogis')
     assert(recipe['ingredients'] == ['potatoes', 'cream'])
-    # user2 attempts to get and update the newly created recipe
+    # jennifer attempts to get and update the newly created recipe
     another_update = {'ingredients': ['potatoes', 'cream', 'cheddar']}
     fail_get = make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2)
     assert(fail_get.status_code == 401)
@@ -83,10 +82,10 @@ def test_deathnut():
     fail_patch = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2, another_update)
     assert(fail_patch.status_code == 401)
     assert(json.loads(fail_patch.text)['message'] == 'Not authorized')
-    # user1 grants user2 'view' privilege
+    # michael grants jennifer 'view' privilege
     auth_grant = {'id': pierogi_id, 'role': 'view', 'user': 'jennifer'}
     make_jwt_request(requests.post, 'http://localhost:{}/auth-recipe'.format(port), user_1, auth_grant)
-    # user2 still cannot patch, but can view, the recipe
+    # jennifer still cannot patch, but can view, the recipe
     fail_patch = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2, another_update)
     assert(fail_patch.status_code == 401)
     assert(json.loads(fail_patch.text)['message'] == 'Not authorized')

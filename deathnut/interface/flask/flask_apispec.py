@@ -13,7 +13,7 @@ logger = get_deathnut_logger(__name__)
 class DeathnutAuthSchema(Schema):
     class Meta:
         strict = True
-    id = fields.Integer(description='Resource id', required=True)
+    id = fields.String(description='Resource id', required=True)
     user = fields.String(description='User to assign role to', required=True)
     role = fields.String(description='The role being assigned', required=True)
 

@@ -51,9 +51,7 @@ class DeathnutRestClient(DeathnutClient):
 
     def _deathnut_checks_successful(self, dn_user, dn_func, *args, **kwargs):
         """adds deathnut_calling_user to kwargs"""
-        logger.warn("Kwargs before -> " + str(kwargs))
         kwargs.update(deathnut_calling_user=dn_user, deathnut_user=dn_user)
-        logger.warn("Kwargs after -> " + str(kwargs))
         return dn_func(*args, **kwargs)
     
     def execute_if_authorized(self, dn_user, dn_role, dn_rid, dn_enabled, dn_strict, dn_dont_wait, 
@@ -117,3 +115,12 @@ class DeathnutRestClient(DeathnutClient):
         if self._is_authenticated(dn_user):
             return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
         raise DeathnutException('No authentication provided')
+    
+    def _change_roles(self, action, roles, resource_id, **kwargs):
+        if 'deathnut_calling_user' not in kwargs:
+            logger.warn('Unauthenticated user attempt to update roles')
+            return
+        user = kwargs.get('deathnut_user', '')
+        if roles:
+            for role in roles:
+                action(user, role, resource_id)
