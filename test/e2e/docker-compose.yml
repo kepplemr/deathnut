@@ -5,7 +5,7 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-  # TODO have another recipe-service based in restplus. Swap them out.
+  # TODO have another recipe-service based in restplus. Have another esp route to it.
   recipe-service:
     build: .
     image: recipe-service

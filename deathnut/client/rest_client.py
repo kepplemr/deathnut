@@ -115,12 +115,3 @@ class DeathnutRestClient(DeathnutClient):
         if self._is_authenticated(dn_user):
             return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
         raise DeathnutException('No authentication provided')
-    
-    def _change_roles(self, action, roles, resource_id, **kwargs):
-        if 'deathnut_calling_user' not in kwargs:
-            logger.warn('Unauthenticated user attempt to update roles')
-            return
-        user = kwargs.get('deathnut_user', '')
-        if roles:
-            for role in roles:
-                action(user, role, resource_id)

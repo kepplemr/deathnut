@@ -64,34 +64,46 @@ def test_secured_requests():
 
 def test_deathnut_basics():
     port = 8080
-    user_1 = generate_jwt('michael')
-    user_2 = generate_jwt('jennifer')
+    michael_jwt = generate_jwt('michael')
+    jennifer_jwt = generate_jwt('jennifer')
     # michael creates, edits, and gets a new recipe
-    new_recipe = {'title': 'Pierogis', 'ingredients': ['potatoes', 'cream or whatever']}
-    new_update = {'ingredients': ['potatoes', 'cream']}
-    pierogi_id = json.loads(make_jwt_request(requests.post, 'http://localhost:{}/recipe'.format(port), user_1, new_recipe).text)['id']
-    make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_1, new_update)
-    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_1).text)
+    recipe = {'title': 'Pierogis', 'ingredients': ['potatoes', 'cream or whatever']}
+    update = {'ingredients': ['potatoes', 'cream']}
+    pierogi_id = json.loads(make_jwt_request(requests.post, 'http://localhost:{}/recipe'.format(port), michael_jwt, recipe).text)['id']
+    make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), michael_jwt, update)
+    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), michael_jwt).text)
     assert(recipe['title'] == 'Pierogis')
     assert(recipe['ingredients'] == ['potatoes', 'cream'])
-    # jennifer attempts to get and update the newly created recipe
+    assert(recipe['id'] == pierogi_id)
+    # jennifer attempts to get and update the newly created recipe (she fails)
     another_update = {'ingredients': ['potatoes', 'cream', 'cheddar']}
-    fail_get = make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2)
-    assert(fail_get.status_code == 401)
-    assert(json.loads(fail_get.text)['message'] == 'Not authorized')
-    fail_patch = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2, another_update)
-    assert(fail_patch.status_code == 401)
-    assert(json.loads(fail_patch.text)['message'] == 'Not authorized')
+    response = make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), jennifer_jwt)
+    assert(response.status_code == 401)
+    response = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), jennifer_jwt, another_update)
+    assert(response.status_code == 401)
     # michael grants jennifer 'view' privilege
     auth_grant = {'id': pierogi_id, 'role': 'view', 'user': 'jennifer'}
-    make_jwt_request(requests.post, 'http://localhost:{}/auth-recipe'.format(port), user_1, auth_grant)
+    response = make_jwt_request(requests.post, 'http://localhost:{}/auth-recipe'.format(port), michael_jwt, auth_grant)
+    assert(response.status_code == 200)
     # jennifer still cannot patch, but can view, the recipe
-    fail_patch = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2, another_update)
-    assert(fail_patch.status_code == 401)
-    assert(json.loads(fail_patch.text)['message'] == 'Not authorized')
-    recipe = json.loads(make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), user_2).text)
-    assert(recipe['title'] == 'Pierogis')
-    assert(recipe['ingredients'] == ['potatoes', 'cream'])
+    response = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), jennifer_jwt, another_update)
+    assert(response.status_code == 401)
+    response = make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), jennifer_jwt)
+    assert(response.status_code == 200)
+    assert(json.loads(response.text) == recipe)
+    # jennifer gets greedy and tries to give herself edit rights to the recipe
+    auth_grant = {'id': pierogi_id, 'role': 'edit', 'user': 'jennifer'}
+    response = make_jwt_request(requests.post, 'http://localhost:{}/auth-recipe'.format(port), jennifer_jwt, auth_grant)
+    assert(response.status_code == 401)
+    # michael finds out and decides to revoke jennifer's view access
+    auth_grant = {'id': pierogi_id, 'role': 'view', 'user': 'jennifer', 'revoke': True}
+    response = make_jwt_request(requests.post, 'http://localhost:{}/auth-recipe'.format(port), michael_jwt, auth_grant)
+    assert(response.status_code == 200)
+    # jennifer can no longer view the recipe, and still cannot patch it (sucks to be jennifer)
+    response = make_jwt_request(requests.get, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), jennifer_jwt)
+    assert(response.status_code == 401)
+    response = make_jwt_request(requests.patch, 'http://localhost:{}/recipe/{}'.format(port,pierogi_id), jennifer_jwt, another_update)
+    assert(response.status_code == 401)
 
 def generate_and_deploy_openapi_spec():
     pass
@@ -102,7 +114,7 @@ def main():
     generate_and_deploy_openapi_spec()
     test_unsecured_requests()
     test_secured_requests()
-    test_deathnut()
+    test_deathnut_basics()
 
 if __name__ == "__main__":
     main()

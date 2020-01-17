@@ -54,6 +54,15 @@ class FlaskAuthorization(object):
             return wrapped
         return decorator
 
+    def _change_roles(self, action, roles, resource_id, **kwargs):
+        if 'deathnut_calling_user' not in kwargs:
+            logger.warn('Unauthenticated user attempt to update roles')
+            return
+        user = kwargs.get('deathnut_user', '')
+        if roles:
+            for role in roles:
+                action(user, role, resource_id)
+
     def assign_roles(self, resource_id, roles, **kwargs):
         return self._change_roles(self._dnr_client.assign_role, roles, resource_id, **kwargs)
     

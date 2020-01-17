@@ -1,10 +1,10 @@
-from flask import request, jsonify
+from flask import request
 from flask_apispec import marshal_with, use_kwargs
 from marshmallow import Schema, fields
 
 from deathnut.util.redis import get_redis_connection
 from deathnut.util.deathnut_exception import DeathnutException
-from .flask_base import FlaskAuthorization
+from deathnut.interface.flask.flask_base import FlaskAuthorization
 
 from deathnut.util.logger import get_deathnut_logger
 
@@ -15,7 +15,13 @@ class DeathnutAuthSchema(Schema):
         strict = True
     id = fields.String(description='Resource id', required=True)
     user = fields.String(description='User to assign role to', required=True)
-    role = fields.String(description='The role being assigned', required=True)
+    role = fields.String(description='The role to assign or revoke', required=False)
+    revoke = fields.Boolean(description='If True, attempt to revoke the privilege', required=False)
+
+class DeathnutErrorSchema(Schema):
+    class Meta:
+        strict = True
+    message = fields.String(description='Description of what failed', required=True)
 
 class FlaskAPISpecAuthorization(FlaskAuthorization):
     def __init__(self, app, service, resource_type=None, strict=True, enabled=True, **kwargs):
@@ -43,16 +49,17 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         @use_kwargs(DeathnutAuthSchema)
         @marshal_with(DeathnutAuthSchema)
         @self.requires_role(requires_role, strict=True)
-        def auth(id, user, role, **kwargs):
+        def auth(id, user, revoke=False, **kwargs):
             kwargs.update(deathnut_user=user)
-            self.assign_roles(id, [role], **kwargs)
-            return {"id": id, "user": user, "role": role}, 200
+            if revoke:
+                self.revoke_roles(id, [grants_role], **kwargs)
+            else:
+                self.assign_roles(id, [grants_role], **kwargs)
+            return {"id": id, "user": user, "role": grants_role, "revoke": revoke}, 200
         return auth
 
     def register_error_handler(self):
         @self._app.errorhandler(DeathnutException)
-        #@api.marshal_with(error_fields, code=400)
-        #@api.header('My-Header',  'Some description')
-        def handle_fake_exception_with_header(error):
-            '''This is a custom error'''
-            return jsonify({'message': error.args[0]}), 401
+        @marshal_with(DeathnutErrorSchema)
+        def handle_deathnut_failures(error):
+            return {'message': error.args[0]}, 401
