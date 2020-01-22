@@ -12,4 +12,4 @@ ENV PYTHONPATH $PYTHONPATH:/
 
 EXPOSE 80
 
-CMD ["python" , "/recipe-service/app.py", "--generate-openapi-template"]
+CMD ["python" , "/recipe-service/app-apispec.py", "--generate-openapi-template"]
