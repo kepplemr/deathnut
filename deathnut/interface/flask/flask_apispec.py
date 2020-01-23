@@ -47,7 +47,7 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         """
         @self._app.route(name, methods=('POST',))
         @use_kwargs(DeathnutAuthSchema)
-        @marshal_with(DeathnutAuthSchema)
+        #@marshal_with(DeathnutAuthSchema)
         @self.requires_role(requires_role, strict=True)
         def auth(id, user, revoke=False, **kwargs):
             kwargs.update(deathnut_user=user)

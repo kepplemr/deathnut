@@ -1,6 +1,6 @@
 import redis
 import uuid
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify
 from flask_apispec import marshal_with, use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 
