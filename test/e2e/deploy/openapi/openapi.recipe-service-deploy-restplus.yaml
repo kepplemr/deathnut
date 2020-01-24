@@ -2,6 +2,25 @@ basePath: /
 consumes:
 - application/json
 definitions:
+  DeathnutAuthSchema:
+    properties:
+      id:
+        description: Resource id
+        type: string
+      revoke:
+        description: If true, revokes the privilege
+        type: boolean
+      role:
+        description: The role to assign or revoke
+        type: string
+      user:
+        description: User to assign role to
+        type: string
+    required:
+    - id
+    - role
+    - user
+    type: object
   PartialRecipeSchema:
     properties:
       ingredients:
@@ -41,7 +60,27 @@ info:
   title: Recipe Service
   version: '1.0'
 paths:
-  /asdasdas/auth-recipe: {}
+  /auth-recipe:
+    post:
+      operationId: post_deathnut_auth
+      parameters:
+      - in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/DeathnutAuthSchema'
+      - description: An optional fields mask
+        format: mask
+        in: header
+        name: X-Fields
+        type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/DeathnutAuthSchema'
+      tags:
+      - ''
   /recipe:
     post:
       operationId: post_recipe_create
@@ -130,9 +169,7 @@ securityDefinitions:
     x-google-jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/jwt-test@wellio-dev-michael.iam.gserviceaccount.com
 swagger: '2.0'
 tags:
-- description: Default namespace
-  name: default
 - description: recipe operations
   name: recipe
 - description: Deathnut auth
-  name: asdasdas
+  name: ''
