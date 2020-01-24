@@ -34,13 +34,12 @@ def make_regular_request(method, url, data=None):
 
 def make_jwt_request(method, url, signed_jwt, data=None):
     headers = {'Authorization': 'Bearer {}'.format(signed_jwt.decode('utf-8')), 'content-type': 'application/json'}
-    #print('Headers -> ' + str(headers))
+    print('Headers -> ' + str(headers))
     response = method(url, headers=headers, data=json.dumps(data))
     print(str(response.text))
     return response
 
-def test_unsecured_requests():
-    port = 80
+def test_unsecured_requests(port):
     new_recipe = {'title': 'Michael Cold Brew', 'ingredients': ['Soda', 'Coffee']}
     new_update = {'ingredients': ['Water', 'Coffee']}
     cold_brew_recipe = make_regular_request(requests.post, 'http://localhost:{}/recipe'.format(port), new_recipe)
@@ -50,8 +49,7 @@ def test_unsecured_requests():
     assert(recipe['title'] == 'Michael Cold Brew')
     assert(recipe['ingredients'] == ['Water', 'Coffee'])
 
-def test_secured_requests():
-    port = 8080
+def test_secured_requests(port):
     jwt = generate_jwt('michael')
     new_recipe = {'title': 'Michael spaghetti', 'ingredients': ['Pasta', 'Sour Cream']}
     new_update = {'ingredients': ['Pasta', 'Tomato Sauce']}
@@ -62,8 +60,7 @@ def test_secured_requests():
     assert(recipe['title'] == 'Michael spaghetti')
     assert(recipe['ingredients'] == ['Pasta', 'Tomato Sauce'])
 
-def test_deathnut_basics():
-    port = 8080
+def test_deathnut_basics(port):
     michael_jwt = generate_jwt('michael')
     jennifer_jwt = generate_jwt('jennifer')
     # michael creates, edits, and gets a new recipe
@@ -112,9 +109,12 @@ def generate_and_deploy_openapi_spec():
 def main():
     # wait for docker-compose
     generate_and_deploy_openapi_spec()
-    test_unsecured_requests()
-    test_secured_requests()
-    test_deathnut_basics()
+    #test_unsecured_requests(80)
+    test_unsecured_requests(81)
+    #test_secured_requests(8080)
+    test_secured_requests(8081)
+    #test_deathnut_basics(8080)
+    test_deathnut_basics(8081)
 
 if __name__ == "__main__":
     main()

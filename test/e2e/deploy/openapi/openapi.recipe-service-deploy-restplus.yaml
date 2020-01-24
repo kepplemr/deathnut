@@ -1,0 +1,138 @@
+basePath: /
+consumes:
+- application/json
+definitions:
+  PartialRecipeSchema:
+    properties:
+      ingredients:
+        description: Recipe ingredients
+        items:
+          type: string
+        type: array
+      title:
+        description: Recipe title
+        type: string
+    type: object
+  RecipeSchema:
+    properties:
+      ingredients:
+        description: Recipe ingredients
+        items:
+          type: string
+        type: array
+      title:
+        description: Recipe title
+        type: string
+    required:
+    - ingredients
+    - title
+    type: object
+  RecipeWithId:
+    allOf:
+    - $ref: '#/definitions/RecipeSchema'
+    - properties:
+        id:
+          description: Recipe id
+          type: string
+      type: object
+host: recipe-service.endpoints.wellio-dev-michael.cloud.goog
+info:
+  description: Example recipe service
+  title: Recipe Service
+  version: '1.0'
+paths:
+  /asdasdas/auth-recipe: {}
+  /recipe:
+    post:
+      operationId: post_recipe_create
+      parameters:
+      - in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/RecipeSchema'
+      - description: An optional fields mask
+        format: mask
+        in: header
+        name: X-Fields
+        type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/RecipeWithId'
+      tags:
+      - recipe
+  /recipe/{id}:
+    get:
+      operationId: get_recipe
+      parameters:
+      - description: An optional fields mask
+        format: mask
+        in: header
+        name: X-Fields
+        type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/RecipeWithId'
+      tags:
+      - recipe
+    parameters:
+    - in: path
+      name: id
+      required: true
+      type: string
+    patch:
+      operationId: patch_recipe
+      parameters:
+      - in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/PartialRecipeSchema'
+      - description: An optional fields mask
+        format: mask
+        in: header
+        name: X-Fields
+        type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            $ref: '#/definitions/RecipeWithId'
+      tags:
+      - recipe
+produces:
+- application/json
+responses:
+  MaskError:
+    description: When any error occurs on mask
+  ParseError:
+    description: When a mask can't be parsed
+schemes:
+- http
+- https
+security:
+- firebase-whatever-production: []
+securityDefinitions:
+  api_key:
+    in: query
+    name: key
+    type: apiKey
+  firebase-whatever-production:
+    authorizationUrl: ''
+    flow: implicit
+    type: oauth2
+    x-google-audiences: recipe-service
+    x-google-issuer: jwt-test@wellio-dev-michael.iam.gserviceaccount.com
+    x-google-jwks_uri: https://www.googleapis.com/robot/v1/metadata/x509/jwt-test@wellio-dev-michael.iam.gserviceaccount.com
+swagger: '2.0'
+tags:
+- description: Default namespace
+  name: default
+- description: recipe operations
+  name: recipe
+- description: Deathnut auth
+  name: asdasdas

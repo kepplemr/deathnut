@@ -7,9 +7,13 @@ sleep 10
 
 # TODO wait until service is up
 
-docker exec recipe-service python /recipe-service/generate_openapi/generate_configs.py \
+# docker exec recipe-service-apispec python /recipe-service/generate_openapi/generate_configs.py \
+#   -b /recipe-service/deploy/openapi/openapi.generated.yaml \
+#   -o /recipe-service/deploy/openapi/openapi.overrides.yaml -p /recipe-service/deploy/openapi
+
+docker exec recipe-service-restplus python /recipe-service/generate_openapi/generate_configs.py \
   -b /recipe-service/deploy/openapi/openapi.generated.yaml \
-  -o /recipe-service/deploy/openapi/openapi.overrides.yaml -p /recipe-service/deploy/openapi
+  -o /recipe-service/deploy/openapi/openapi.overrides-restplus.yaml -p /recipe-service/deploy/openapi
 
 # endpoints != esp
 # gcloud endpoints services deploy openapi.recipe-service-deploy.yaml 

@@ -140,7 +140,6 @@ def _remove_options_operations(template_dict):
     Remove 'options' operations from endpoint spec
     """
     for path in list(template_dict['paths']):
-        logging.info('Path -> ' + str(path))
         for operation in list(template_dict['paths'][path]):
             if operation == 'options':
                 del template_dict['paths'][path][operation]

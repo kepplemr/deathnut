@@ -5,19 +5,20 @@ services:
     container_name: redis
     ports:
       - "6379:6379"
-  recipe-service-apispec:
-    build: .
-    image: recipe-service
-    container_name: recipe-service-apispec
-    ports:
-      - "80:80"
-    volumes:
-      - ./keys:/keys
-      - ../../deathnut:/deathnut
-      - ./deploy:/recipe-service/deploy
-    links:
-      - "redis"
+  # recipe-service-apispec:
+  #   build: .
+  #   image: recipe-service
+  #   container_name: recipe-service-apispec
+  #   ports:
+  #     - "80:80"
+  #   volumes:
+  #     - ./keys:/keys
+  #     - ../../deathnut:/deathnut
+  #     - ./deploy:/recipe-service/deploy
+  #   links:
+  #     - "redis"
   recipe-service-restplus:
+    build: .
     image: recipe-service
     container_name: recipe-service-restplus
     ports:
@@ -30,15 +31,15 @@ services:
       - "redis"
     command:
       ["python" , "/recipe-service/flask/app-restplus.py", "--generate-openapi-template"]
-  esp-apispec:
-    image: gcr.io/endpoints-release/endpoints-runtime:1
-    container_name: esp-apispec
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./keys:/keys
-    command: ["--service=recipe-service.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed", 
-    "--backend=recipe-service-apispec:80", "--http_port=8080", "--service_account_key=/keys/jwt-test.json"]
+  # esp-apispec:
+  #   image: gcr.io/endpoints-release/endpoints-runtime:1
+  #   container_name: esp-apispec
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - ./keys:/keys
+  #   command: ["--service=recipe-service.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed", 
+  #   "--backend=recipe-service-apispec:80", "--http_port=8080", "--service_account_key=/keys/jwt-test.json"]
   esp-restplus:
     image: gcr.io/endpoints-release/endpoints-runtime:1
     container_name: esp-restplus
@@ -47,4 +48,4 @@ services:
     volumes:
       - ./keys:/keys
     command: ["--service=recipe-service.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed", 
-    "--backend=recipe-service-restplus:81", "--http_port=8081", "--service_account_key=/keys/jwt-test.json"]
+    "--backend=recipe-service-restplus:80", "--http_port=8081", "--service_account_key=/keys/jwt-test.json"]
