@@ -108,13 +108,12 @@ def generate_and_deploy_openapi_spec():
 
 def main():
     # wait for docker-compose
-    generate_and_deploy_openapi_spec()
-    #test_unsecured_requests(80)
-    test_unsecured_requests(81)
-    #test_secured_requests(8080)
-    test_secured_requests(8081)
-    #test_deathnut_basics(8080)
-    test_deathnut_basics(8081)
+    #generate_and_deploy_openapi_spec()
+    for port in [80, 81]:
+        test_unsecured_requests(port)
+    for port in [8080, 8081]:
+        test_secured_requests(port)
+        test_deathnut_basics(port)
 
 if __name__ == "__main__":
     main()

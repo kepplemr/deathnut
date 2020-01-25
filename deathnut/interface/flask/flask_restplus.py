@@ -19,6 +19,7 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
         redis = get_redis_connection(**kwargs)
         super(FlaskRestplusAuthorization, self).__init__(service, resource_type=resource_type, 
             strict=strict, enabled=enabled, redis_connection=redis)
+        self.me = self
         self.api = api
         self.deathnut_auth_schema = api.model('DeathnutAuthSchema', {
             'id': fields.String(description='Resource id', required=True),
@@ -32,6 +33,7 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
         #api.add_namespace(self.ns)
 
     def create_auth_endpoint(self, name, requires_role, grants_role):
+        test = self
         #@self.ns.route(name)
         class DeathnutAuth(Resource):
             @self.ns.expect(self.deathnut_auth_schema)
@@ -41,13 +43,12 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
                 dn_auth = request.json
                 id = dn_auth['id']
                 user = dn_auth['user']
-                grants_role = dn_auth['grants_role']
                 revoke = dn_auth.get('revoke', False)
                 kwargs.update(deathnut_user=user)
                 if revoke:
-                    super.revoke_roles(id, [grants_role], **kwargs)
+                    test.revoke_roles(id, [grants_role], **kwargs)
                 else:
-                    super.assign_roles(id, [grants_role], **kwargs)
+                    test.assign_roles(id, [grants_role], **kwargs)
                 return {"id": id, "user": user, "role": grants_role, "revoke": revoke}, 200
         # DeathnutAuth()
         # self.api.add_namespace(self.ns)
@@ -58,4 +59,4 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
         @self.ns.errorhandler(DeathnutException)
         @self.ns.marshal_with(self.deathnut_error_schema)
         def handle_deathnut_failures(error):
-            return {'special error handler': error.args[0]}, 401
+            return {'message': error.args[0]}, 401

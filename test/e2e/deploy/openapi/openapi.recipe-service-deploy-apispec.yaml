@@ -54,10 +54,10 @@ definitions:
           description: Recipe id
           type: string
       type: object
-host: recipe-service-restplus.endpoints.wellio-dev-michael.cloud.goog
+host: recipe-service-apispec.endpoints.wellio-dev-michael.cloud.goog
 info:
   description: Example recipe service
-  title: Recipe Service
+  title: Recipe Service (Apispec)
   version: '1.0'
 paths:
   /auth-recipe:

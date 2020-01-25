@@ -1,5 +1,5 @@
 filename: openapi.recipe-service-deploy-restplus.yaml
-host: recipe-service.endpoints.wellio-dev-michael.cloud.goog
+host: recipe-service-restplus.endpoints.wellio-dev-michael.cloud.goog
 info:
   description: Example recipe service
   title: Recipe Service

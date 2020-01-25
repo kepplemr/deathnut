@@ -25,12 +25,23 @@ class FlaskAuthorization(object):
         strict = kwargs.get('strict', self._dnr_client.get_strict())
         user = get_user_from_jwt_header(request)
         return user, enabled, strict
+    
+    #def get_resource_id(self, )
 
     def requires_role(self, role, id_identifier='id', **kwargs):
         def decorator(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
-                resource_id = kwargs[id_identifier]
+                dn_args = request.view_args
+                if request.json:
+                    dn_args.update(request.json)
+                #resource_id = kwargs[id_identifier]
+                #args = getattr(request, 'json', {}).update(request.view_args)
+                #args = request.json.update(request.views_args)
+                # for attr in dir(request):
+                #     logger.warn('{} : {}'.format(attr, getattr(request, attr)))
+                resource_id = dn_args[id_identifier]
+                #resource_id = 'asdasdas'
                 user, enabled, strict = self._get_auth_arguments(request, **kwargs)
                 # if request is a GET, fetch resource asynchronously and return if authorized.
                 dont_wait = kwargs.get('dont_wait', request.method == 'GET')
