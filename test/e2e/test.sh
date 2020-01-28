@@ -1,4 +1,6 @@
 #!/bin/bash
+curl -X POST "http://localhost:80/recipe" -H "content-type: application/json" -d '{"title": "Michael Cold Brew", "ingredients": ["Water", "Coffee"]}'
+
 
 curl -X POST "http://localhost:80/recipe" -H "accept: application/json"  --data-binary \
   '{"title": "Michael Cold Brew", "ingredients": ["Water", "Coffee"]}'

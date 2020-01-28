@@ -7,6 +7,8 @@ WORKDIR /recipe-service
 
 RUN pip install redis==3.3.11
 RUN pip install flask-restplus~=0.12.1
+RUN pip install falcon==2.0.0
+RUN pip install falcon-apispec==0.3.0
 
 ENV PYTHONPATH $PYTHONPATH:/recipe-service
 ENV PYTHONPATH $PYTHONPATH:/

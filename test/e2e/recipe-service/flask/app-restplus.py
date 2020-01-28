@@ -24,8 +24,6 @@ recipe_with_id = api.inherit('RecipeWithId', recipe_schema, {
 recipe_partial = api.model('PartialRecipeSchema', {
     'title': fields.String(description='Recipe title'),
     'ingredients': fields.List(fields.String(), description='Recipe ingredients')})
-testing = api.model('Testnotused', {
-    'testing': fields.String()})
 
 redis_conn = redis.Redis(host='redis', port=6379)
 auth_o = FlaskRestplusAuthorization(api, service='example', resource_type='recipe', 
@@ -68,5 +66,4 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
-    logger.warn('App api type -> ' + str(type(api)))
     app.run(debug=True, port=80, host='0.0.0.0')

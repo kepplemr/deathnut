@@ -2,6 +2,6 @@ filename: openapi.recipe-service-deploy-restplus.yaml
 host: recipe-service-restplus.endpoints.wellio-dev-michael.cloud.goog
 info:
   description: Example recipe service
-  title: Recipe Service
+  title: Recipe Service (Restplus)
 security:
   - firebase-whatever-production: []

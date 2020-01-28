@@ -4,4 +4,4 @@
 .tox/
 __pycache__/
 *.generated.yaml
-*-deploy.yaml
+*-deploy-*.yaml
