@@ -5,28 +5,47 @@ import logging
 import sys
 
 from concurrent.futures import ThreadPoolExecutor
-from flask import request, jsonify
+#from flask import request, jsonify
 from functools import partial
 
 from deathnut.client.rest_client import DeathnutRestClient
 from deathnut.util.jwt import get_user_from_jwt_header
 from deathnut.util.logger import get_deathnut_logger
+from deathnut.util.deathnut_exception import DeathnutException
+
+import falcon
+from apispec import APISpec
 
 logger = get_deathnut_logger(__name__)
 
-class FlaskAuthorization(object):
+class ErrorHandler:
+    @staticmethod
+    def deathnut_exception(ex, req, resp, params):
+        resp.media = {'message': ex.args[0]}
+        resp.status = falcon.HTTP_401
+
+class FalconAuthorization(object):
     """Base class containing flask-specific logic"""
 
-    def __init__(self, service, resource_type=None, strict=True, enabled=True, redis_connection=None):
+    def __init__(self, app, service, resource_type=None, strict=True, enabled=True, redis_connection=None):
+        self._app = app
         self._dnr_client = DeathnutRestClient(service, resource_type, strict, enabled, redis_connection=redis_connection)
-
-    # Flask base
-    def _get_auth_arguments(self, request, **kwargs):
-        enabled = kwargs.get('enabled', self._dnr_client.get_enabled())
-        strict = kwargs.get('strict', self._dnr_client.get_strict())
-        user = get_user_from_jwt_header(request)
-        return user, enabled, strict
+        self._app.add_error_handler(DeathnutException, ErrorHandler.deathnut_exception)
+        self._enabled_default = self._dnr_client.get_enabled()
+        self._strict_default = self._dnr_client.get_strict()
     
+    @staticmethod
+    def get_auth_header(*args, **kwargs):
+        req = args[1]
+        return req.get_header('X-Endpoint-Api-Userinfo', default='')
+
+    @staticmethod
+    def get_auth_arguments(jwt_header, enabled_default, strict_default, **kwargs):
+        enabled = kwargs.get('enabled', enabled_default)
+        strict = kwargs.get('strict', strict_default)
+        user = get_user_from_jwt_header(jwt_header)
+        return user, enabled, strict
+
     def requires_role(self, role, id_identifier='id', **kwargs):
         def decorator(func):
             @functools.wraps(func)
@@ -41,13 +60,14 @@ class FlaskAuthorization(object):
                 #     logger.warn('{} : {}'.format(attr, getattr(request, attr)))
                 resource_id = dn_args[id_identifier]
                 #resource_id = 'asdasdas'
-                user, enabled, strict = self._get_auth_arguments(request, **kwargs)
+                user, enabled, strict = self._get_auth_arguments(request, True, False, **kwargs)
                 # if request is a GET, fetch resource asynchronously and return if authorized.
                 dont_wait = kwargs.get('dont_wait', request.method == 'GET')
                 return self._dnr_client.execute_if_authorized(user, role, resource_id, enabled, strict, dont_wait, func, *args, **kwargs)
             return wrapped
         return decorator 
     
+    # Interface
     def authentication_required(self):
         """
         If enabled is False, does nothing.
@@ -58,8 +78,8 @@ class FlaskAuthorization(object):
         def decorator(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
-                # request must be passed from here to not be outside flask req context.
-                user, enabled, strict = self._get_auth_arguments(request, **kwargs)
+                jwt_header = self.get_auth_header(*args, **kwargs)
+                user, enabled, strict = self.get_auth_arguments(jwt_header, self._enabled_default, self._strict_default, **kwargs)
                 return self._dnr_client.execute_if_authenticated(user, enabled, strict, func, *args, **kwargs)
             return wrapped
         return decorator
@@ -78,3 +98,21 @@ class FlaskAuthorization(object):
     
     def revoke_roles(self, resource_id, roles, **kwargs):
         return self._change_roles(self._dnr_client.revoke_role, roles, resource_id, **kwargs)
+
+    def create_auth_endpoint(self, name, requires_role, grants_role):
+        test = self
+        class DeathnutAuth:
+            @self.requires_role(requires_role, strict=True)
+            def on_post(self, **kwargs):
+                dn_auth = request.json
+                id = dn_auth['id']
+                user = dn_auth['user']
+                revoke = dn_auth.get('revoke', False)
+                kwargs.update(deathnut_user=user)
+                if revoke:
+                    test.revoke_roles(id, [grants_role], **kwargs)
+                else:
+                    test.assign_roles(id, [grants_role], **kwargs)
+                return {"id": id, "user": user, "role": grants_role, "revoke": revoke}, 200
+        curr_auth_endpoint = DeathnutAuth()
+        self._app.add_route(name, curr_auth_endpoint)

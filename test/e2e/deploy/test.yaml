@@ -1,46 +1,46 @@
 definitions:
   Recipe:
-    'properties':
+    properties:
       ingredients:
         description: Recipe ingredients
-        'items':
-          'type': 'string'
-        'type': 'array'
+        items:
+          type: string
+        type: array
       title:
         description: Recipe title
-        'type': 'string'
-    'required':
+        type: string
+    required:
     - ingredients
     - title
-    'type': 'object'
+    type: object
   RecipePartial:
-    'properties':
+    properties:
       ingredients:
         description: Recipe ingredients
-        'items':
-          'type': 'string'
-        'type': 'array'
+        items:
+          type: string
+        type: array
       title:
         description: Recipe title
-        'type': 'string'
-    'type': 'object'
+        type: string
+    type: object
   RecipeWithId:
-    'properties':
+    properties:
       id:
         description: Recipe id
-        'type': 'string'
+        type: string
       ingredients:
         description: Recipe ingredients
-        'items':
-          'type': 'string'
-        'type': 'array'
+        items:
+          type: string
+        type: array
       title:
         description: Recipe title
-        'type': 'string'
-    'required':
+        type: string
+    required:
     - ingredients
     - title
-    'type': 'object'
+    type: object
 info:
   title: Example recipe service
   version: 1.0.0
@@ -65,10 +65,10 @@ paths:
               name: id
               required: true
               type: integer
-            - 'in': body
-              'name': 'body'
-              'required': true
-              'schema':
+            - in: body
+              name: body
+              required: true
+              schema:
                 $ref: '#/definitions/RecipePartial'
             responses:
             - - - '200'
@@ -79,10 +79,10 @@ paths:
     - - - - post
           - operationId: post_recipe
             parameters:
-            - 'in': body
-              'name': payload
-              'required': true
-              'schema':
+            - in: body
+              name: payload
+              required: true
+              schema:
                 $ref: '#/definitions/Recipe'
             responses:
             - - - '200'

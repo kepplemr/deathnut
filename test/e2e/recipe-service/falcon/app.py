@@ -6,30 +6,33 @@ from marshmallow import Schema, fields
 from wsgiref import simple_server
 import uuid
 import yaml
+import redis
 
-#from deathnut.util.logger import get_deathnut_logger
+from deathnut.util.logger import get_deathnut_logger
+from deathnut.interface.falcon.falcon_auth import FalconAuthorization
 
-#logger = get_deathnut_logger(__name__)
+logger = get_deathnut_logger(__name__)
 recipe_db = dict()
 
 class Recipe(Schema):
     title = fields.String(description='Recipe title', required=True)
     ingredients = fields.List(fields.String(), description='Recipe ingredients', required=True)
-
 class RecipeWithId(Recipe):
     id = fields.String(description='Recipe id')
-
 class RecipePartial(Schema):
     title = fields.String(description='Recipe title')
     ingredients = fields.List(fields.String(), description='Recipe ingredients')
 
 app = falcon.API()
+redis_conn = redis.Redis(host='redis', port=6379)
+auth_o = FalconAuthorization(app, service='example', resource_type='recipe', 
+    redis_connection=redis_conn, enabled=True, strict=False)
+auth_o.create_auth_endpoint('/auth-recipe', requires_role='own', grants_role='view')
 
 class RecipeBase:
     #TODO list
-
-    #@auth_o.authentication_required()
-    def on_post(self, req, resp):
+    @auth_o.authentication_required()
+    def on_post(self, req, resp, **kwargs):
         """
         Recipe POST endpoint
         ---
@@ -56,7 +59,7 @@ class RecipeSpecific:
     """Schema checking done by ESP, no need to redo. Marshmallow used only generate specs"""
 
     #@auth_o.requires_role('edit')
-    def on_patch(self, req, resp, id):
+    def on_patch(self, req, resp, id, **kwargs):
         """
         Recipe PATCH endpoint
         ---
@@ -73,6 +76,7 @@ class RecipeSpecific:
             description: the updated recipe
             schema: RecipeWithId
         """
+        logger.info('Req media -> ' + str(req.media))
         partial_recipe = req.media
         for key in partial_recipe:
             recipe_db[id][key] = partial_recipe[key]
@@ -80,7 +84,7 @@ class RecipeSpecific:
         resp.status = falcon.HTTP_200
 
     #@auth_o.requires_role('view')
-    def on_get(self,req, resp, id):
+    def on_get(self,req, resp, id, **kwargs):
         """
         Recipe POST endpoint
         ---
