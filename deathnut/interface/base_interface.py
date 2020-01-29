@@ -1,25 +1,29 @@
 import functools
 from abc import ABC, abstractstaticmethod
+from concurrent.futures import ThreadPoolExecutor
 
 from deathnut.client.deathnut_client import DeathnutClient
+from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.jwt import get_user_from_jwt_header
+from deathnut.util.logger import get_deathnut_logger
 
+logger = get_deathnut_logger(__name__)
 
 class BaseAuthorizationInterface(ABC):
-    def __init__(
-        self,
-        app,
-        service,
-        resource_type=None,
-        strict=True,
-        enabled=True,
-        redis_connection=None,
-    ):
-        self._app = app
-        self._dnr_client = DeathnutClient(
-            service, resource_type, redis_connection=redis_connection
-        )
-        self._app.add_error_handler(DeathnutException, ErrorHandler.deathnut_exception)
+    def __init__(self, service, resource_type=None, strict=True, enabled=True, **kwargs):
+        """
+        Parameters
+        ----------
+        strict: bool
+            If False, user 'Unauthenticated'
+            Note: this value is a default and can be overiden when calling client methods.
+        enabled: bool
+            If True, authorization checks will run. If False, all users will have access to
+            everything.
+            Note: this value is a default and can be overiden when calling client methods.
+        *Other params defined in DeathnutClient.
+        """
+        self._client = DeathnutClient(service, resource_type, **kwargs)
         self._enabled_default = enabled
         self._strict_default = strict
 
@@ -28,17 +32,20 @@ class BaseAuthorizationInterface(ABC):
         pass
 
     @abstractstaticmethod
-    def get_resource_id(*args, **kwargs):
+    def get_resource_id(id_identifier, *args, **kwargs):
         pass
 
     @abstractstaticmethod
     def get_dont_wait(*args, **kwargs):
         pass
 
-    @staticmethod
-    def get_auth_arguments(jwt_header, enabled_default, strict_default, **kwargs):
-        enabled = kwargs.get("enabled", enabled_default)
-        strict = kwargs.get("strict", strict_default)
+    @abstractstaticmethod
+    def create_auth_endpoint(self, name, requires_role, grants_role):
+        pass
+
+    def get_auth_arguments(self, jwt_header, **kwargs):
+        enabled = kwargs.get("enabled", self._enabled_default)
+        strict = kwargs.get("strict", self._strict_default)
         user = get_user_from_jwt_header(jwt_header)
         return user, enabled, strict
 
@@ -46,31 +53,17 @@ class BaseAuthorizationInterface(ABC):
         def decorator(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
-                dn_args = self.get_resource_id(*args, **kwargs)
-                resource_id = dn_args[id_identifier]
+                resource_id = self.get_resource_id(id_identifier, *args, **kwargs)
+                #resource_id = dn_args[id_identifier]
                 jwt_header = self.get_auth_header(*args, **kwargs)
-                user, enabled, strict = self.get_auth_arguments(
-                    jwt_header, self._enabled_default, self._strict_default, **kwargs
-                )
+                user, enabled, strict = self.get_auth_arguments(jwt_header, **kwargs)
                 # if request is a GET, fetch resource asynchronously and return if authorized.
                 dont_wait = self.get_dont_wait(*args, **kwargs)
-                return self._dnr_client.execute_if_authorized(
-                    user,
-                    role,
-                    resource_id,
-                    enabled,
-                    strict,
-                    dont_wait,
-                    func,
-                    *args,
-                    **kwargs
-                )
-
+                return self.execute_if_authorized(user, role, resource_id, enabled, strict,
+                    dont_wait, func, *args, **kwargs)
             return wrapped
-
         return decorator
 
-    # Interface
     def authentication_required(self):
         """
         If enabled is False, does nothing.
@@ -78,20 +71,13 @@ class BaseAuthorizationInterface(ABC):
           assign/revoke calls within the endpoint will be logged and ignored.
         If enabled and strict, requires callers to be successfully authenticated.
         """
-
         def decorator(func):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
                 jwt_header = self.get_auth_header(*args, **kwargs)
-                user, enabled, strict = self.get_auth_arguments(
-                    jwt_header, self._enabled_default, self._strict_default, **kwargs
-                )
-                return self._dnr_client.execute_if_authenticated(
-                    user, enabled, strict, func, *args, **kwargs
-                )
-
+                user, enabled, strict = self.get_auth_arguments(jwt_header, **kwargs)
+                return self.execute_if_authenticated(user, enabled, strict, func, *args, **kwargs)
             return wrapped
-
         return decorator
 
     def _change_roles(self, action, roles, resource_id, **kwargs):
@@ -104,20 +90,10 @@ class BaseAuthorizationInterface(ABC):
                 action(user, role, resource_id)
 
     def assign_roles(self, resource_id, roles, **kwargs):
-        return self._change_roles(
-            self._dnr_client.assign_role, roles, resource_id, **kwargs
-        )
+        return self._change_roles(self._client.assign_role, roles, resource_id, **kwargs)
 
     def revoke_roles(self, resource_id, roles, **kwargs):
-        return self._change_roles(
-            self._dnr_client.revoke_role, roles, resource_id, **kwargs
-        )
-
-    def get_strict(self):
-        return self._strict
-
-    def get_enabled(self):
-        return self._enabled
+        return self._change_roles(self._client.revoke_role, roles, resource_id, **kwargs)
 
     def _is_auth_required(self, user, enabled, strict):
         """if this is true, do not return wrapped function"""
@@ -125,15 +101,13 @@ class BaseAuthorizationInterface(ABC):
             logger.warn("Authorization is not enabled")
             return False
         if not strict and user == "Unauthenticated":
-            logger.warn(
-                "Strict auth checking disabled, granting access to unauthenticated user"
-            )
+            logger.warn("Strict auth checking disabled, granting access to unauthenticated user")
             return False
         return True
 
     def _is_authorized(self, user, role, resource_id):
         """user is authenticated and has access to resource"""
-        return self.check_role(user, role, resource_id)
+        return self._client.check_role(user, role, resource_id)
 
     def _is_authenticated(self, user):
         return user != "Unauthenticated"
@@ -143,18 +117,8 @@ class BaseAuthorizationInterface(ABC):
         kwargs.update(deathnut_calling_user=dn_user, deathnut_user=dn_user)
         return dn_func(*args, **kwargs)
 
-    def execute_if_authorized(
-        self,
-        dn_user,
-        dn_role,
-        dn_rid,
-        dn_enabled,
-        dn_strict,
-        dn_dont_wait,
-        dn_func,
-        *args,
-        **kwargs
-    ):
+    def execute_if_authorized(self, dn_user, dn_role, dn_rid, dn_enabled, dn_strict, dn_dont_wait,
+        dn_func, *args, **kwargs):
         """
         Executes a wrapped function if a user has the required role for a given resource_id.
 
@@ -190,9 +154,7 @@ class BaseAuthorizationInterface(ABC):
             return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
         raise DeathnutException("Not authorized")
 
-    def execute_if_authenticated(
-        self, dn_user, dn_enabled, dn_strict, dn_func, *args, **kwargs
-    ):
+    def execute_if_authenticated(self, dn_user, dn_enabled, dn_strict, dn_func, *args, **kwargs):
         """
         Executes a wrapped function if a user is authenticated (not authorization checks).
 

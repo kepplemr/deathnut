@@ -63,3 +63,12 @@ services:
   #     - ./keys:/keys
   #   command: ["--service=recipe-service.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed",
   #   "--backend=recipe-service-restplus:80", "--http_port=8081", "--service_account_key=/keys/jwt-test.json"]
+  esp-falcon:
+    image: gcr.io/endpoints-release/endpoints-runtime:1
+    container_name: esp-restplus
+    ports:
+      - "8082:8082"
+    volumes:
+      - ./keys:/keys
+    command: ["--service=recipe-service.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed",
+    "--backend=recipe-service-falcon:80", "--http_port=8082", "--service_account_key=/keys/jwt-test.json"]

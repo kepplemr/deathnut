@@ -7,38 +7,24 @@ from marshmallow import Schema, fields
 
 logger = get_deathnut_logger(__name__)
 
-
 class DeathnutAuthSchema(Schema):
     class Meta:
         strict = True
-
     id = fields.String(description="Resource id", required=True)
     user = fields.String(description="User to assign role to", required=True)
     role = fields.String(description="The role to assign or revoke", required=False)
-    revoke = fields.Boolean(
-        description="If True, attempt to revoke the privilege", required=False
-    )
-
+    revoke = fields.Boolean(description="If True, attempt to revoke the privilege", required=False)
 
 class DeathnutErrorSchema(Schema):
     class Meta:
         strict = True
-
     message = fields.String(description="Description of what failed", required=True)
-
 
 class FlaskAPISpecAuthorization(FlaskAuthorization):
     def __init__(
-        self, app, service, resource_type=None, strict=True, enabled=True, **kwargs
-    ):
-        redis = get_redis_connection(**kwargs)
-        super(FlaskAPISpecAuthorization, self).__init__(
-            service,
-            resource_type=resource_type,
-            strict=strict,
-            enabled=enabled,
-            redis_connection=redis,
-        )
+        self, app, service, resource_type=None, strict=True, enabled=True, **kwargs):
+        super(FlaskAPISpecAuthorization, self).__init__(service, resource_type=resource_type,
+            strict=strict, enabled=enabled, **kwargs)
         self._app = app
         self.register_error_handler()
 
@@ -56,7 +42,6 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         grants_role: str
             name of the role granted to the id if the calling user has the authority to do so.
         """
-
         @self._app.route(name, methods=("POST",))
         @use_kwargs(DeathnutAuthSchema)
         @marshal_with(DeathnutAuthSchema)
@@ -68,7 +53,6 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
             else:
                 self.assign_roles(id, [grants_role], **kwargs)
             return {"id": id, "user": user, "role": grants_role, "revoke": revoke}, 200
-
         return auth
 
     def register_error_handler(self):

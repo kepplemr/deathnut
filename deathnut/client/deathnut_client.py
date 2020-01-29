@@ -29,9 +29,7 @@ class DeathnutClient(object):
 
     def _check_authenticated(self, user):
         if user == "Unauthenticated":
-            raise DeathnutException(
-                "Unauthenticated user cannot be granted/removed from roles"
-            )
+            raise DeathnutException("Unauthenticated user cannot be granted/removed from roles")
 
     def assign_role(self, user, role, resource_id):
         self._check_authenticated(user)
