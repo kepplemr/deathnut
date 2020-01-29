@@ -1,9 +1,7 @@
-import functools
 from abc import ABC
-from deathnut.client.deathnut_client import DeathnutClient
-from deathnut.util.jwt import get_user_from_jwt_header
-from deathnut.util.logger import get_deathnut_logger
+
 from deathnut.interface.base_interface import BaseAuthorizationInterface
+from deathnut.util.logger import get_deathnut_logger
 from flask import request
 
 logger = get_deathnut_logger(__name__)

@@ -3,7 +3,6 @@ from wsgiref import simple_server
 
 import falcon
 import redis
-import yaml
 from apispec import APISpec
 from apispec.ext.marshmallow import MarshmallowPlugin
 from deathnut.interface.falcon.falcon_auth import FalconAuthorization
@@ -27,7 +26,7 @@ app = falcon.API()
 redis_conn = redis.Redis(host="redis", port=6379)
 spec = APISpec(title="Example recipe service", version="1.0.0", openapi_version="2.0",
   plugins=[FalconPlugin(app), MarshmallowPlugin()])
-auth_o = FalconAuthorization(app, spec, service="example", resource_type="recipe", 
+auth_o = FalconAuthorization(app, spec, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
 auth_o.create_auth_endpoint("/auth-recipe", requires_role="own", grants_role="view")
 
@@ -106,7 +105,7 @@ class RecipeSpecific:
         """
         resp.media = recipe_db[id]
         resp.status = falcon.HTTP_200
-        
+
 recipe_create_and_list = RecipeBase()
 recipe_resource = RecipeSpecific()
 app.add_route("/recipe", recipe_create_and_list)

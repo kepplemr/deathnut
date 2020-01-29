@@ -1,5 +1,6 @@
 from marshmallow import Schema, fields
 
+
 class DeathnutAuthSchema(Schema):
     class Meta:
         strict = True

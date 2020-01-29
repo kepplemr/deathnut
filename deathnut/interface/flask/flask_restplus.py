@@ -1,8 +1,9 @@
 from deathnut.interface.flask.flask_base import FlaskAuthorization
+from deathnut.schema.restplus.dn_schemas_restplus import \
+    register_restplus_schemas
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.redis import get_redis_connection
-from deathnut.schema.restplus.dn_schemas_restplus import register_restplus_schemas
 from flask import request
 from flask_restplus import Resource
 

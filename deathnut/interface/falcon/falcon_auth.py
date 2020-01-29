@@ -1,13 +1,9 @@
 import falcon
-import uuid
-from marshmallow import Schema, fields
-
-from deathnut.client.deathnut_client import DeathnutClient
 from deathnut.interface.base_interface import BaseAuthorizationInterface
+from deathnut.schema.marshmallow.dn_schemas_marshmallow import \
+    DeathnutAuthSchema
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
-from deathnut.util.redis import get_redis_connection
-from deathnut.schema.marshmallow.dn_schemas_marshmallow import DeathnutAuthSchema, DeathnutErrorSchema
 
 logger = get_deathnut_logger(__name__)
 
