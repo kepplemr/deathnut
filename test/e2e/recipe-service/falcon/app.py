@@ -25,7 +25,9 @@ class RecipePartial(Schema):
 
 app = falcon.API()
 redis_conn = redis.Redis(host="redis", port=6379)
-auth_o = FalconAuthorization(app, service="example", resource_type="recipe", 
+spec = APISpec(title="Example recipe service", version="1.0.0", openapi_version="2.0",
+  plugins=[FalconPlugin(app), MarshmallowPlugin()])
+auth_o = FalconAuthorization(app, spec, service="example", resource_type="recipe", 
     redis_connection=redis_conn, enabled=True, strict=False)
 auth_o.create_auth_endpoint("/auth-recipe", requires_role="own", grants_role="view")
 
@@ -47,7 +49,6 @@ class RecipeBase:
             description: the created recipe
             schema: RecipeWithId
         """
-        print("Req media -> " + str(req.media))
         recipe = req.media
         new_id = str(uuid.uuid4())
         new_recipe = {
@@ -110,14 +111,6 @@ recipe_create_and_list = RecipeBase()
 recipe_resource = RecipeSpecific()
 app.add_route("/recipe", recipe_create_and_list)
 app.add_route("/recipe/{id}", recipe_resource)
-
-spec = APISpec(
-    title="Example recipe service",
-    version="1.0.0",
-    openapi_version="2.0",
-    plugins=[FalconPlugin(app), MarshmallowPlugin()],
-)
-
 spec.components.schema("Recipe", schema=Recipe)
 spec.components.schema("RecipeWithId", schema=RecipeWithId)
 spec.components.schema("RecipePartial", schema=RecipePartial)

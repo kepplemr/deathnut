@@ -3,26 +3,12 @@ from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.redis import get_redis_connection
 from flask_apispec import marshal_with, use_kwargs
-from marshmallow import Schema, fields
+from deathnut.schema.marshmallow.dn_schemas_marshmallow import DeathnutAuthSchema, DeathnutErrorSchema
 
 logger = get_deathnut_logger(__name__)
 
-class DeathnutAuthSchema(Schema):
-    class Meta:
-        strict = True
-    id = fields.String(description="Resource id", required=True)
-    user = fields.String(description="User to assign role to", required=True)
-    role = fields.String(description="The role to assign or revoke", required=False)
-    revoke = fields.Boolean(description="If True, attempt to revoke the privilege", required=False)
-
-class DeathnutErrorSchema(Schema):
-    class Meta:
-        strict = True
-    message = fields.String(description="Description of what failed", required=True)
-
 class FlaskAPISpecAuthorization(FlaskAuthorization):
-    def __init__(
-        self, app, service, resource_type=None, strict=True, enabled=True, **kwargs):
+    def __init__(self, app, service, resource_type=None, strict=True, enabled=True, **kwargs):
         super(FlaskAPISpecAuthorization, self).__init__(service, resource_type=resource_type,
             strict=strict, enabled=enabled, **kwargs)
         self._app = app

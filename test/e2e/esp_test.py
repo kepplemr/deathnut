@@ -6,13 +6,8 @@ import google.auth.jwt
 import requests
 
 
-def generate_jwt(
-    user,
-    sa_keyfile="keys/jwt-test.json",
-    sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com",
-    audience="recipe-service",
-    expiry_length=3600,
-):
+def generate_jwt(user, sa_keyfile="keys/jwt-test.json", sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com",
+    audience="recipe-service", expiry_length=3600):
     """Generates a signed JSON Web Token using a Google API Service Account."""
     now = int(time.time())
     payload = {
@@ -35,17 +30,14 @@ def generate_jwt(
 def make_regular_request(method, url, data=None):
     headers = {"content-type": "application/json"}
     response = method(url, headers=headers, data=json.dumps(data))
-    print(str(response.text))
+    #print(str(response.text))
     response.raise_for_status()
     return response
 
 
 def make_jwt_request(method, url, signed_jwt, data=None):
-    headers = {
-        "Authorization": "Bearer {}".format(signed_jwt.decode("utf-8")),
-        "content-type": "application/json",
-    }
-    print("Headers -> " + str(headers))
+    headers = {"Authorization": "Bearer {}".format(signed_jwt.decode("utf-8")),
+        "content-type": "application/json"}
     response = method(url, headers=headers, data=json.dumps(data))
     print(str(response.text))
     return response
@@ -54,20 +46,10 @@ def make_jwt_request(method, url, signed_jwt, data=None):
 def test_unsecured_requests(port):
     new_recipe = {"title": "Michael Cold Brew", "ingredients": ["Soda", "Coffee"]}
     new_update = {"ingredients": ["Water", "Coffee"]}
-    cold_brew_recipe = make_regular_request(
-        requests.post, "http://localhost:{}/recipe".format(port), new_recipe
-    )
+    cold_brew_recipe = make_regular_request(requests.post, "http://localhost:{}/recipe".format(port), new_recipe)
     cold_brew_id = json.loads(cold_brew_recipe.text)["id"]
-    make_regular_request(
-        requests.patch,
-        "http://localhost:{}/recipe/{}".format(port, cold_brew_id),
-        new_update,
-    )
-    recipe = json.loads(
-        make_regular_request(
-            requests.get, "http://localhost:{}/recipe/{}".format(port, cold_brew_id)
-        ).text
-    )
+    make_regular_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, cold_brew_id), new_update)
+    recipe = json.loads(make_regular_request(requests.get, "http://localhost:{}/recipe/{}".format(port, cold_brew_id)).text)
     assert recipe["title"] == "Michael Cold Brew"
     assert recipe["ingredients"] == ["Water", "Coffee"]
 
@@ -103,14 +85,7 @@ def test_deathnut_basics(port):
     # michael creates, edits, and gets a new recipe
     recipe = {"title": "Pierogis", "ingredients": ["potatoes", "cream or whatever"]}
     update = {"ingredients": ["potatoes", "cream"]}
-    pierogi_id = json.loads(
-        make_jwt_request(
-            requests.post,
-            "http://localhost:{}/recipe".format(port),
-            michael_jwt,
-            recipe,
-        ).text
-    )["id"]
+    pierogi_id = json.loads(make_jwt_request(requests.post,"http://localhost:{}/recipe".format(port), michael_jwt, recipe).text)["id"]
     make_jwt_request(
         requests.patch,
         "http://localhost:{}/recipe/{}".format(port, pierogi_id),
@@ -207,9 +182,11 @@ def generate_and_deploy_openapi_spec():
 def main():
     # wait for docker-compose
     # generate_and_deploy_openapi_spec()
-    # for port in [82]:
-    #     test_unsecured_requests(port)
-    for port in [8082]:
+    for port in [80, 81, 82]:
+        print('Testing unsecured requests on port: ' + str(port))
+        test_unsecured_requests(port)
+    for port in [8080, 8081, 8082]:
+        print('Testing secured requests on port: ' + str(port))
         test_secured_requests(port)
         test_deathnut_basics(port)
 

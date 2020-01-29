@@ -10,8 +10,8 @@ logger = get_deathnut_logger(__name__)
 
 class FlaskAuthorization(BaseAuthorizationInterface, ABC):
     """Base class containing flask-specific logic"""
-    def __init__(self, service, resource_type=None, strict=True, enabled=True, redis_connection=None):
-        self._dnr_client = DeathnutClient(service, resource_type, redis_connection=redis_connection)
+    def __init__(self, service, resource_type=None, strict=True, enabled=True, **kwargs):
+        super(FlaskAuthorization, self).__init__(service, resource_type, strict, enabled, **kwargs)
 
     @staticmethod
     def get_auth_header(*args, **kwargs):

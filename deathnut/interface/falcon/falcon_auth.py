@@ -1,9 +1,13 @@
 import falcon
+import uuid
+from marshmallow import Schema, fields
+
 from deathnut.client.deathnut_client import DeathnutClient
 from deathnut.interface.base_interface import BaseAuthorizationInterface
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.redis import get_redis_connection
+from deathnut.schema.marshmallow.dn_schemas_marshmallow import DeathnutAuthSchema, DeathnutErrorSchema
 
 logger = get_deathnut_logger(__name__)
 
@@ -14,9 +18,10 @@ class ErrorHandler:
         resp.status = falcon.HTTP_401
 
 class FalconAuthorization(BaseAuthorizationInterface):
-    def __init__(self, app, service, resource_type=None, strict=True, enabled=True, **kwargs):
+    def __init__(self, app, spec, service, resource_type=None, strict=True, enabled=True, **kwargs):
         super(FalconAuthorization, self).__init__(service, resource_type, strict, enabled, **kwargs)
         self._app = app
+        self._spec = spec
         self._app.add_error_handler(DeathnutException, ErrorHandler.deathnut_exception)
 
     @staticmethod
@@ -41,6 +46,20 @@ class FalconAuthorization(BaseAuthorizationInterface):
         class DeathnutAuth:
             @self.requires_role(requires_role, strict=True)
             def on_post(self, req, resp, **kwargs):
+                """
+                Auth POST endpoint
+                ---
+                operationId: auth_endpoint
+                parameters:
+                - in: body
+                  required: true
+                  name: payload
+                  schema: DeathnutAuthSchema
+                responses:
+                  200:
+                    description: the granted/revoked access
+                    schema: DeathnutAuthSchema
+                """
                 dn_auth = req.media
                 id = dn_auth["id"]
                 user = dn_auth["user"]
@@ -54,3 +73,5 @@ class FalconAuthorization(BaseAuthorizationInterface):
                 resp.status = falcon.HTTP_200
         curr_auth_endpoint = DeathnutAuth()
         self._app.add_route(name, curr_auth_endpoint)
+        self._spec.components.schema("DeathnutAuthSchema", schema=DeathnutAuthSchema)
+        self._spec.path(resource=curr_auth_endpoint)

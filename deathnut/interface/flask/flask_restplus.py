@@ -2,21 +2,11 @@ from deathnut.interface.flask.flask_base import FlaskAuthorization
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.redis import get_redis_connection
+from deathnut.schema.restplus.dn_schemas_restplus import register_restplus_schemas
 from flask import request
-from flask_restplus import Resource, fields, Api
+from flask_restplus import Resource
 
 logger = get_deathnut_logger(__name__)
-
-api = Api()
-#ns = api.namespace('', description='Deathnut auth')
-deathnut_auth_schema = api.model("DeathnutAuthSchema", {
-    "id": fields.String(description="Resource id", required=True),
-    "user": fields.String(description="User to assign role to", required=True),
-    "role": fields.String(description="The role to assign or revoke", required=True),
-    "revoke": fields.Boolean(description="If true, revokes the privilege")})
-
-deathnut_error_schema = api.model("DeathnutErrorSchema", {
-    "message": fields.String(description="Description of what failed")})
 
 class FlaskRestplusAuthorization(FlaskAuthorization):
     def __init__(self, api, service, resource_type=None, strict=True, enabled=True, **kwargs):
@@ -25,6 +15,7 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
             strict=strict, enabled=enabled, redis_connection=redis)
         self.me = self
         self.ns = api.namespace("", description="Deathnut auth")
+        self.deathnut_auth_schema, self.deathnut_error_schema = register_restplus_schemas(api)
         self.register_error_handler()
         api.add_namespace(self.ns)
 
@@ -32,8 +23,8 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
         test = self
         # @self.ns.route(name)
         class DeathnutAuth(Resource):
-            @self.ns.expect(deathnut_auth_schema)
-            @self.ns.marshal_with(deathnut_auth_schema)
+            @self.ns.expect(self.deathnut_auth_schema)
+            @self.ns.marshal_with(self.deathnut_auth_schema)
             @self.requires_role(requires_role, strict=True)
             def post(self, **kwargs):
                 dn_auth = request.json
@@ -49,7 +40,6 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
                     {"id": id, "user": user, "role": grants_role, "revoke": revoke},
                     200,
                 )
-
         # DeathnutAuth()
         # self.api.add_namespace(self.ns)
         # self.api.add_resource(DeathnutAuth)
@@ -57,6 +47,6 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
 
     def register_error_handler(self):
         @self.ns.errorhandler(DeathnutException)
-        @self.ns.marshal_with(deathnut_error_schema)
+        @self.ns.marshal_with(self.deathnut_error_schema)
         def handle_deathnut_failures(error):
             return {"message": error.args[0]}, 401

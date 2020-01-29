@@ -57,7 +57,7 @@ definitions:
 host: recipe-service-restplus.endpoints.wellio-dev-michael.cloud.goog
 info:
   description: Example recipe service
-  title: Recipe Service
+  title: Recipe Service (Restplus)
   version: '1.0'
 paths:
   /auth-recipe:

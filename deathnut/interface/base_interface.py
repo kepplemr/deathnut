@@ -54,7 +54,6 @@ class BaseAuthorizationInterface(ABC):
             @functools.wraps(func)
             def wrapped(*args, **kwargs):
                 resource_id = self.get_resource_id(id_identifier, *args, **kwargs)
-                #resource_id = dn_args[id_identifier]
                 jwt_header = self.get_auth_header(*args, **kwargs)
                 user, enabled, strict = self.get_auth_arguments(jwt_header, **kwargs)
                 # if request is a GET, fetch resource asynchronously and return if authorized.
