@@ -1,21 +1,9 @@
-import base64
-import functools
-import json
-import logging
-import sys
-
-from concurrent.futures import ThreadPoolExecutor
-
 # from flask import request, jsonify
-from functools import partial
 
-from deathnut.client.rest_client import DeathnutRestClient
-
-from deathnut.util.logger import get_deathnut_logger
-from deathnut.util.deathnut_exception import DeathnutException
 
 import falcon
-from apispec import APISpec
+from deathnut.util.deathnut_exception import DeathnutException
+from deathnut.util.logger import get_deathnut_logger
 
 logger = get_deathnut_logger(__name__)
 

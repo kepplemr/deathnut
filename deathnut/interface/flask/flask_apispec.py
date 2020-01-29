@@ -1,12 +1,9 @@
-from flask import request
+from deathnut.interface.flask.flask_base import FlaskAuthorization
+from deathnut.util.deathnut_exception import DeathnutException
+from deathnut.util.logger import get_deathnut_logger
+from deathnut.util.redis import get_redis_connection
 from flask_apispec import marshal_with, use_kwargs
 from marshmallow import Schema, fields
-
-from deathnut.util.redis import get_redis_connection
-from deathnut.util.deathnut_exception import DeathnutException
-from deathnut.interface.flask.flask_base import FlaskAuthorization
-
-from deathnut.util.logger import get_deathnut_logger
 
 logger = get_deathnut_logger(__name__)
 

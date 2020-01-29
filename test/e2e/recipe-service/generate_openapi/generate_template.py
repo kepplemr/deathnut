@@ -13,8 +13,6 @@ import sys
 
 import yaml
 
-from generate_openapi.generate_configs import dict_merge
-
 default_file_location = "deploy/openapi/openapi.generated.yaml"
 
 

@@ -1,9 +1,9 @@
-import fakeredis
 import unittest
 import uuid
 
-from deathnut.util.logger import get_deathnut_logger
+import fakeredis
 from deathnut.client.deathnut_client import DeathnutClient
+from deathnut.util.logger import get_deathnut_logger
 
 logger = get_deathnut_logger(__name__)
 fake_redis_conn = fakeredis.FakeStrictRedis()

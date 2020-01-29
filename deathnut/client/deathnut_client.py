@@ -1,9 +1,6 @@
-import itertools
-import redis
-
-from deathnut.util.redis import get_redis_connection
-from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.deathnut_exception import DeathnutException
+from deathnut.util.logger import get_deathnut_logger
+from deathnut.util.redis import get_redis_connection
 
 logger = get_deathnut_logger(__name__)
 

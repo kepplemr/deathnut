@@ -1,16 +1,17 @@
-import fakeredis
 import time
 import unittest
 import uuid
 from timeit import default_timer as timer
+
+import fakeredis
+from deathnut.client.rest_client import DeathnutRestClient
+from deathnut.util.logger import get_deathnut_logger
 
 try:
     from unittest.mock import patch
 except ImportError:
     from mock import patch
 
-from deathnut.util.logger import get_deathnut_logger
-from deathnut.client.rest_client import DeathnutRestClient
 
 logger = get_deathnut_logger(__name__)
 fake_redis_conn = fakeredis.FakeStrictRedis()
