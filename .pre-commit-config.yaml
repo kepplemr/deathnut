@@ -5,10 +5,10 @@ repos:
     -   id: check-yaml
     -   id: end-of-file-fixer
     -   id: trailing-whitespace
--   repo: https://github.com/psf/black
-    rev: 19.3b0
-    hooks:
-    -   id: black
+# -   repo: https://github.com/psf/black
+#     rev: 19.3b0
+#     hooks:
+#     -   id: black
 - repo: git@github.com:humitos/mirrors-autoflake.git
   rev: v1.1
   hooks:
