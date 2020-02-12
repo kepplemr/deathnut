@@ -9,13 +9,13 @@ commands:
 jobs:
   # precommit -> test -> deploy
   pre-commit-check:
-    docker: 
+    docker:
       - image: python:3.7.6
     steps:
       - checkout
       - pre-commit
   test:
-    docker: 
+    docker:
       - image: python:3.7.6
     steps:
       - run:
