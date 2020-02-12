@@ -7,7 +7,7 @@ commands:
   initialize: gcp-cli/initialize
   pre-commit: linter/pre-commit
 jobs:
-  pre-commit-check:
+  style-check:
     docker:
       - image: python:3.7.6
     steps:
@@ -25,7 +25,11 @@ jobs:
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
       - run:
           name: Run tox
-          command: pwd && tox
+          command: tox
+      - save_cache:
+          key: tested-deathnut-$CIRCLE_SHA1
+          paths:
+            - .tox/dist
   deploy:
     # restore cache from test step
     executor: gcp-cli/google
@@ -33,14 +37,17 @@ jobs:
       - install:
           version: 268.0.0
       - initialize
-      - run: gcloud
+      - restore_cache:
+          keys:
+            - tested-deathnut-$CIRCLE_SHA1
+      - run: md5 .tox/dist/deathnut-0.1.zip
 workflows:
   build_test_deploy:
     jobs:
-      - pre-commit-check
+      - style-check
       - test:
           requires:
-            - pre-commit-check
+            - style-check
       - deploy:
           requires:
             - test
