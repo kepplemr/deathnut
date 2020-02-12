@@ -1,6 +1,6 @@
 version: 2.1
 orbs:
-  gcp-cli: circleci/gcp-cli@1.0.0
+  gcp-cli: circleci/gcp-cli@1.8.3
 commands:
   install: gcp-cli/install
 jobs:
