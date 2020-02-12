@@ -1,11 +1,17 @@
 version: 2.1
 orbs:
   gcp-cli: circleci/gcp-cli@1.8.3
+  linter: thekevjames/linter@1.0.36
 commands:
   install: gcp-cli/install
   initialize: gcp-cli/initialize
+  pre-commit: linter/pre-commit
 jobs:
   # precommit -> test -> deploy
+  pre-commit-check:
+    machine: true
+    steps:
+      - checkout
   deploy:
     executor: gcp-cli/google
     steps:
@@ -16,5 +22,7 @@ jobs:
 workflows:
   build_test_deploy:
     jobs:
-      - deploy
-
+      - pre-commit-check
+      - deploy:
+          requires:
+            - pre-commit-check
