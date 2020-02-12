@@ -86,12 +86,7 @@ def test_deathnut_basics(port):
     recipe = {"title": "Pierogis", "ingredients": ["potatoes", "cream or whatever"]}
     update = {"ingredients": ["potatoes", "cream"]}
     pierogi_id = json.loads(make_jwt_request(requests.post,"http://localhost:{}/recipe".format(port), michael_jwt, recipe).text)["id"]
-    make_jwt_request(
-        requests.patch,
-        "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-        michael_jwt,
-        update,
-    )
+    make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id),vmichael_jwt, update)
     recipe = json.loads(
         make_jwt_request(
             requests.get,

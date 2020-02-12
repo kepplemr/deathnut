@@ -12,8 +12,7 @@ jobs:
       - checkout
       - run:
           name: pre-commit install
-          command: |
-            pip install --progress-bar=off pre-commit
+          command: pip install --progress-bar=off pre-commit
       - run:
           name: pre-commit run
           command: pre-commit run -a
@@ -26,7 +25,7 @@ jobs:
           name: Install tox
           command: |
             pip install --progress-bar=off --user tox
-            #echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
+            echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
       - run:
           name: Run tox
           command: tox
@@ -45,7 +44,7 @@ jobs:
             - tested-deathnut-{{ .Revision }}
       - run:
           name: Deploy artifact
-          command: find .tox/dist -name *.zip -exec gsutil cp {} "gs://deathnut/${CIRCLE_BRANCH}/" \;
+          command: find .tox/dist -name *.zip -exec gsutil cp {} "gs://dist.getwellio.com/projects/deathnut/${CIRCLE_BRANCH}/" \;
 workflows:
   build_test_deploy:
     jobs:

@@ -28,6 +28,7 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         grants_role: str
             name of the role granted to the id if the calling user has the authority to do so.
         """
+        # TODO test granting edit
         @self._app.route(name, methods=("POST",))
         @use_kwargs(DeathnutAuthSchema)
         @marshal_with(DeathnutAuthSchema)

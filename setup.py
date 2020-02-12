@@ -1,10 +1,10 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="deathnut",
     version="0.1",
     description="Simple redis-based authorization library",
     install_requires=["redis==3.3.11"],
-    packages=["deathnut"],
+    packages=find_packages(),
     test_suite="nose.collector",
 )
