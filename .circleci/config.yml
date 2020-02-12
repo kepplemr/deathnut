@@ -32,7 +32,7 @@ jobs:
           name: Run tox
           command: tox
       - save_cache:
-          key: tested-deathnut-$CIRCLE_SHA1
+          key: tested-deathnut-{{ epoch }}
           paths:
             - .tox/dist
   deploy:
@@ -41,9 +41,9 @@ jobs:
       - install:
           version: 268.0.0
       - initialize
-      # - restore_cache:
-      #     keys:
-      #       - tested-deathnut-$CIRCLE_SHA1
+      - restore_cache:
+          keys:
+            - tested-deathnut-{{ epoch }}
       - run:
           name: Deploy artifact
           command: |
