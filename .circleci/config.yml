@@ -32,7 +32,7 @@ jobs:
           name: Run tox
           command: tox
       - save_cache:
-          key: tested-deathnut-{{ epoch }}
+          key: tested-deathnut-{{ .BuildNum }}
           paths:
             - .tox/dist
   deploy:
@@ -43,7 +43,7 @@ jobs:
       - initialize
       - restore_cache:
           keys:
-            - tested-deathnut-{{ epoch }}
+            - tested-deathnut-{{ .BuildNum }}
       - run:
           name: Deploy artifact
           command: |
