@@ -39,7 +39,7 @@ jobs:
       - restore_cache:
           keys:
             - tested-deathnut-$CIRCLE_SHA1
-      - run: 
+      - run:
           name: Deploy artifact
           command: |
             ls -la .tox/dist/deathnut-0.1.zip
