@@ -1,22 +1,17 @@
 version: 2.1
-
 orbs:
-  python: circleci/python@0.2.1
-
+  gcp-cli: circleci/gcp-cli@1.0.0
 jobs:
-  build-and-test:
-    executor: python/default
+  # put precommit check here
+  deploy:
+    executor: gcp-cli/google
     steps:
-      - checkout
-      - python/load-cache
-      - python/install-deps
-      - python/save-cache
-      - run:
-          command: ./manage.py test
-          name: Test
-
+      - install:
+          version: 268.0.0
+      - initialize
+      - run: gcloud
 workflows:
-  main:
+  build_test_deploy:
     jobs:
-      - build-and-test
+      - deploy
 
