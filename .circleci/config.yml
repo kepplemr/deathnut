@@ -13,8 +13,7 @@ jobs:
       - run:
           name: pre-commit install
           command: |
-            pip install pre-commit
-            #test python -m pip install --progress-bar=off pre-commit
+            pip install --progress-bar=off pre-commit
       - run:
           name: pre-commit run
           command: pre-commit run -a
@@ -26,9 +25,8 @@ jobs:
       - run:
           name: Install tox
           command: |
-            pip install --user tox
-            #test pip install --progress-bar=off --user tox
-            echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
+            pip install --progress-bar=off --user tox
+            #echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
       - run:
           name: Run tox
           command: tox
