@@ -12,7 +12,12 @@ jobs:
       - image: python:3.7.6
     steps:
       - checkout
-      - pre-commit
+      - run:
+          name: pre-commit
+          command: |
+            python -m pip install --progress-bar=off pre-commit
+            pre-commit run -a
+      #- pre-commit
   test:
     docker:
       - image: python:3.7.6
