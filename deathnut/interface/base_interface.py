@@ -2,8 +2,8 @@ import functools
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
 
-from deathnut.util.abstract_classes import ABC
 from deathnut.client.deathnut_client import DeathnutClient
+from deathnut.util.abstract_classes import ABC
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.jwt import get_user_from_jwt_header
 from deathnut.util.logger import get_deathnut_logger
