@@ -14,7 +14,17 @@ jobs:
     steps:
       - checkout
       - pre-commit
+  test:
+    docker: 
+      - image: python:3.7.6
+    steps:
+      - run:
+          name: Install tox
+          command: |
+            pip install --user tox
+            echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
   deploy:
+    # restore cache from test step
     executor: gcp-cli/google
     steps:
       - install:
@@ -25,6 +35,9 @@ workflows:
   build_test_deploy:
     jobs:
       - pre-commit-check
-      - deploy:
+      - test:
           requires:
             - pre-commit-check
+      - deploy:
+          requires:
+            - test
