@@ -10,7 +10,7 @@ jobs:
   # precommit -> test -> deploy
   pre-commit-check:
     docker: 
-      image: python:3.7.6
+      - image: python:3.7.6
     steps:
       - checkout
       - pre-commit
