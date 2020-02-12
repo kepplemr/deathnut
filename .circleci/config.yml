@@ -31,7 +31,6 @@ jobs:
           paths:
             - .tox/dist
   deploy:
-    # restore cache from test step
     executor: gcp-cli/google
     steps:
       - install:
@@ -40,7 +39,12 @@ jobs:
       - restore_cache:
           keys:
             - tested-deathnut-$CIRCLE_SHA1
-      - run: ls -la .tox/dist/deathnut-0.1.zip
+      - run: 
+          name: Deploy artifact
+          command: |
+            ls -la .tox/dist/deathnut-0.1.zip
+            gcs_folder="gs://deathnut/${CIRCLE_BRANCH}/"
+            find .tox/dist -name *.zip -exec gsutil cp {} ${gcs_folder} \;
 workflows:
   build_test_deploy:
     jobs:
