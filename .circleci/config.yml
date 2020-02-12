@@ -1,6 +1,8 @@
 version: 2.1
 orbs:
   gcp-cli: circleci/gcp-cli@1.0.0
+commands:
+  my-command: gcp-cli/install
 jobs:
   # put precommit check here
   deploy:
