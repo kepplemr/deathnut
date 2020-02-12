@@ -40,7 +40,7 @@ jobs:
       - restore_cache:
           keys:
             - tested-deathnut-$CIRCLE_SHA1
-      - run: md5 .tox/dist/deathnut-0.1.zip
+      - run: ls -la .tox/dist/deathnut-0.1.zip
 workflows:
   build_test_deploy:
     jobs:
