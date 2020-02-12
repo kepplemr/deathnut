@@ -13,11 +13,11 @@ jobs:
     steps:
       - checkout
       - run:
-          name: pre-commit
-          command: |
-            python -m pip install --progress-bar=off pre-commit
-            pre-commit run -a
-      #- pre-commit
+          name: pre-commit install
+          command: python -m pip install --progress-bar=off pre-commit
+      - run:
+          name: pre-commit run
+          command: pre-commit run -a
   test:
     docker:
       - image: python:3.7.6
@@ -41,9 +41,9 @@ jobs:
       - install:
           version: 268.0.0
       - initialize
-      - restore_cache:
-          keys:
-            - tested-deathnut-$CIRCLE_SHA1
+      # - restore_cache:
+      #     keys:
+      #       - tested-deathnut-$CIRCLE_SHA1
       - run:
           name: Deploy artifact
           command: |
