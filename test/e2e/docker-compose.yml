@@ -31,7 +31,7 @@ services:
       - "redis"
     command:
       ["python" , "/recipe-service/flask/app-restplus.py", "--generate-openapi-template", 
-      "--openapi-template-output", "/recipe-service/deploy/openapi/openapi.generated-restplus.yaml"]
+      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/restplus.yaml"]
   recipe-service-falcon:
     build: .
     image: recipe-service

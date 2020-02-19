@@ -67,7 +67,7 @@ paths:
       parameters:
       - in: body
         name: body
-        required: false
+        required: true
         schema:
           $ref: '#/definitions/DeathnutAuth'
       responses:
@@ -81,7 +81,7 @@ paths:
       parameters:
       - in: body
         name: body
-        required: false
+        required: true
         schema:
           $ref: '#/definitions/Recipe'
       responses:
@@ -107,7 +107,7 @@ paths:
       parameters:
       - in: body
         name: body
-        required: false
+        required: true
         schema:
           $ref: '#/definitions/Recipe1'
       - in: path

@@ -1,4 +1,4 @@
-filename: openapi.recipe-service-deploy-apispec.yaml
+filename: apispec.yaml
 host: recipe-service-apispec.endpoints.wellio-dev-michael.cloud.goog
 info:
   description: Example recipe service

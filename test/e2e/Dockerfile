@@ -16,4 +16,4 @@ ENV PYTHONPATH $PYTHONPATH:/
 EXPOSE 80
 
 CMD ["python" , "/recipe-service/flask/app-apispec.py", "--generate-openapi-template", \
-    "--openapi-template-output", "/recipe-service/deploy/openapi/openapi.generated-apispec.yaml"]
+    "--openapi-template-output", "/recipe-service/deploy/openapi/generated/apispec.yaml"]
