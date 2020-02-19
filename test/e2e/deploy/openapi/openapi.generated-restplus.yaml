@@ -66,10 +66,9 @@ definitions:
           description: Recipe id
           type: string
       type: object
-host: recipe-service-restplus.endpoints.wellio-dev-michael.cloud.goog
+host: 127.0.0.1
 info:
-  description: Example recipe service
-  title: Recipe Service (Restplus)
+  title: API
   version: '1.0'
 paths:
   /auth-recipe:
@@ -170,7 +169,7 @@ schemes:
 - http
 - https
 security:
-- firebase-whatever-production: []
+- api_key: []
 securityDefinitions:
   api_key:
     in: query

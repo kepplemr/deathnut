@@ -70,7 +70,7 @@ class BaseAuthorizationInterface(ABC):
             return wrapped
         return decorator
 
-    def authentication_required(self):
+    def authentication_required(self, **kwargs):
         """
         If enabled is False, does nothing.
         If enabled and not strict, does nothing when called by an unauthenticated user.

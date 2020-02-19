@@ -4,34 +4,22 @@ consumes:
 definitions:
   DeathnutAuthSchema:
     properties:
-      grants:
-        description: roles to grant
-        items:
-          type: string
-        type: array
       id:
         description: Resource id
-        type: string
-      requires:
-        description: role required of calling user
         type: string
       revoke:
         description: If true, revokes the privilege
         type: boolean
+      role:
+        description: The role to assign or revoke
+        type: string
       user:
         description: User to assign role to
         type: string
     required:
-    - grants
     - id
-    - requires
+    - role
     - user
-    type: object
-  DeathnutErrorSchema:
-    properties:
-      message:
-        description: Description of what failed
-        type: string
     type: object
   PartialRecipeSchema:
     properties:
@@ -66,10 +54,10 @@ definitions:
           description: Recipe id
           type: string
       type: object
-host: recipe-service-restplus.endpoints.wellio-dev-michael.cloud.goog
+host: recipe-service-apispec.endpoints.wellio-dev-michael.cloud.goog
 info:
   description: Example recipe service
-  title: Recipe Service (Restplus)
+  title: Recipe Service (Apispec)
   version: '1.0'
 paths:
   /auth-recipe:
@@ -158,10 +146,6 @@ paths:
 produces:
 - application/json
 responses:
-  DeathnutException:
-    description: Returns error message encountered
-    schema:
-      $ref: '#/definitions/DeathnutErrorSchema'
   MaskError:
     description: When any error occurs on mask
   ParseError:

@@ -6,7 +6,8 @@ class DeathnutAuthSchema(Schema):
         strict = True
     id = fields.String(description="Resource id", required=True)
     user = fields.String(description="User to assign role to", required=True)
-    role = fields.String(description="The role to assign or revoke", required=False)
+    requires = fields.String(description="User role checked for grant privilege", required=True)
+    grants = fields.List(fields.String(), description="The role to assign or revoke", required=True)
     revoke = fields.Boolean(description="If True, attempt to revoke the privilege", required=False)
 
 class DeathnutErrorSchema(Schema):

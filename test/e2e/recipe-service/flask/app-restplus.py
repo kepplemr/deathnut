@@ -14,37 +14,21 @@ app = Flask(__name__)
 api = Api()
 ns = api.namespace("recipe", description="recipe operations")
 
-recipe_schema = api.model(
-    "RecipeSchema",
-    {
-        "title": fields.String(description="Recipe title", required=True),
-        "ingredients": fields.List(
-            fields.String(), description="Recipe ingredients", required=True
-        ),
-    },
-)
-recipe_with_id = api.inherit(
-    "RecipeWithId", recipe_schema, {"id": fields.String(description="Recipe id")}
-)
-recipe_partial = api.model(
-    "PartialRecipeSchema",
-    {
-        "title": fields.String(description="Recipe title"),
-        "ingredients": fields.List(fields.String(), description="Recipe ingredients"),
-    },
-)
+recipe_schema = api.model("RecipeSchema", {
+    "title": fields.String(description="Recipe title", required=True),
+    "ingredients": fields.List(fields.String(), description="Recipe ingredients", required=True)})
+recipe_with_id = api.inherit("RecipeWithId", recipe_schema, {
+    "id": fields.String(description="Recipe id")})
+recipe_partial = api.model("PartialRecipeSchema", {
+    "title": fields.String(description="Recipe title"),
+    "ingredients": fields.List(fields.String(), description="Recipe ingredients")})
 
 redis_conn = redis.Redis(host="redis", port=6379)
-auth_o = FlaskRestplusAuthorization(
-    api,
-    service="example",
-    resource_type="recipe",
-    redis_connection=redis_conn,
-    enabled=True,
-    strict=False,
-)
-auth_o.create_auth_endpoint("/auth-recipe", requires_role="own", grants_role="view")
-
+auth_o = FlaskRestplusAuthorization(api, service="example", resource_type="recipe", 
+    redis_connection=redis_conn, enabled=True, strict=False)
+auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
+auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit'])
+auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 
 @ns.route("")
 class RecipeCreate(Resource):

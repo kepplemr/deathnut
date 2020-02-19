@@ -1,9 +1,12 @@
+import uuid
 from deathnut.interface.flask.flask_base import FlaskAuthorization
 from deathnut.schema.marshmallow.dn_schemas_marshmallow import (
     DeathnutAuthSchema, DeathnutErrorSchema)
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
 from flask_apispec import marshal_with, use_kwargs
+from deathnut.util.jwt import get_user_from_jwt_header
+from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
 
 logger = get_deathnut_logger(__name__)
 
@@ -14,7 +17,7 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         self._app = app
         self.register_error_handler()
 
-    def create_auth_endpoint(self, name, requires_role, grants_role):
+    def create_auth_endpoint(self, name):
         """
         Utility function to create an endpoint to grant privileges to other users. The endpoint
         will be strict by default (unauthenticated users not allowed).
@@ -23,27 +26,37 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         ----------
         name: str
             name of the endpoint to create, ex: '/auth-recipe'
-        requires_role: str
-            name of the role required of the calling user in order to grant privileges
-        grants_role: str
-            name of the role granted to the id if the calling user has the authority to do so.
         """
-        # TODO test granting edit
-        @self._app.route(name, methods=("POST",))
-        @use_kwargs(DeathnutAuthSchema)
-        @marshal_with(DeathnutAuthSchema)
-        @self.requires_role(requires_role, strict=True)
-        def auth(id, user, revoke=False, **kwargs):
-            kwargs.update(deathnut_user=user)
-            if revoke:
-                self.revoke_roles(id, [grants_role], **kwargs)
-            else:
-                self.assign_roles(id, [grants_role], **kwargs)
-            return {"id": id, "user": user, "role": grants_role, "revoke": revoke}, 200
-        return auth
+        return FlaskAPISpecAuthEndpoint(self, self._app, name)
 
     def register_error_handler(self):
         @self._app.errorhandler(DeathnutException)
         @marshal_with(DeathnutErrorSchema)
         def handle_deathnut_failures(error):
             return {"message": error.args[0]}, 401
+    
+class FlaskAPISpecAuthEndpoint(BaseAuthEndpoint):
+    def __init__(self, auth_o, app, name):
+        self._app = app
+        super(FlaskAPISpecAuthEndpoint, self).__init__(auth_o, name)
+
+    def generate_auth_endpoint(self):
+        @self._app.route(self._name, methods=("POST",))
+        @use_kwargs(DeathnutAuthSchema, required=True)
+        @marshal_with(DeathnutAuthSchema)
+        @self._auth_o.authentication_required(strict=True)
+        def auth(id, user, requires, grants, revoke=False, **kwargs):
+            calling_user = get_user_from_jwt_header(self._auth_o.get_auth_header())
+            if not self._auth_o.get_client().check_role(calling_user, requires, id):
+                raise DeathnutException('Unauthorized to grant')
+            # make sure the granting user has access to grant all roles.
+            for role in grants:
+                self._check_grant_enabled(requires, role)
+            kwargs.update(deathnut_user=user)
+            if revoke:
+                self._auth_o.revoke_roles(id, grants, **kwargs)
+            else:
+                self._auth_o.assign_roles(id, grants, **kwargs)
+            return {"id": id, "user": user, "requires": requires, "grants": grants, "revoke": revoke}, 200
+        return auth
+

@@ -55,10 +55,8 @@ definitions:
         description: Recipe title
         type: string
     type: object
-host: recipe-service-apispec.endpoints.wellio-dev-michael.cloud.goog
 info:
-  description: Example recipe service
-  title: Recipe Service (Apispec)
+  title: flask-apispec
   version: v1
 paths:
   /auth-recipe:
@@ -67,7 +65,7 @@ paths:
       parameters:
       - in: body
         name: body
-        required: false
+        required: true
         schema:
           $ref: '#/definitions/DeathnutAuth'
       responses:
@@ -81,7 +79,7 @@ paths:
       parameters:
       - in: body
         name: body
-        required: false
+        required: true
         schema:
           $ref: '#/definitions/Recipe'
       responses:
@@ -107,7 +105,7 @@ paths:
       parameters:
       - in: body
         name: body
-        required: false
+        required: true
         schema:
           $ref: '#/definitions/Recipe1'
       - in: path
@@ -123,7 +121,7 @@ schemes:
 - http
 - https
 security:
-- firebase-whatever-production: []
+- api_key: []
 securityDefinitions:
   api_key:
     in: query

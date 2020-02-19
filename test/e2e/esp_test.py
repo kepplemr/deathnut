@@ -35,9 +35,12 @@ def make_regular_request(method, url, data=None):
     return response
 
 
-def make_jwt_request(method, url, signed_jwt, data=None):
+def make_jwt_request(method, url, signed_jwt, data=None, extra_header=None):
     headers = {"Authorization": "Bearer {}".format(signed_jwt.decode("utf-8")),
         "content-type": "application/json"}
+    if extra_header:
+        headers.update(extra_header)
+    # print(str(headers))
     response = method(url, headers=headers, data=json.dumps(data))
     print(str(response.text))
     return response
@@ -82,92 +85,62 @@ def test_secured_requests(port):
 def test_deathnut_basics(port):
     michael_jwt = generate_jwt("michael")
     jennifer_jwt = generate_jwt("jennifer")
+    kim_jwt = generate_jwt("kim")
     # michael creates, edits, and gets a new recipe
     recipe = {"title": "Pierogis", "ingredients": ["potatoes", "cream or whatever"]}
     update = {"ingredients": ["potatoes", "cream"]}
     pierogi_id = json.loads(make_jwt_request(requests.post,"http://localhost:{}/recipe".format(port), michael_jwt, recipe).text)["id"]
-    make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id),vmichael_jwt, update)
-    recipe = json.loads(
-        make_jwt_request(
-            requests.get,
-            "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-            michael_jwt,
-        ).text
-    )
+    make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id), michael_jwt, update)
+    recipe = json.loads(make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), michael_jwt).text)
     assert recipe["title"] == "Pierogis"
     assert recipe["ingredients"] == ["potatoes", "cream"]
     assert recipe["id"] == pierogi_id
     # jennifer attempts to get and update the newly created recipe (she fails)
     another_update = {"ingredients": ["potatoes", "cream", "cheddar"]}
-    response = make_jwt_request(
-        requests.get,
-        "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-        jennifer_jwt,
-    )
+    response = make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), jennifer_jwt)
     assert response.status_code == 401
-    response = make_jwt_request(
-        requests.patch,
-        "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-        jennifer_jwt,
-        another_update,
-    )
+    response = make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id), jennifer_jwt, another_update)
     assert response.status_code == 401
     # michael grants jennifer 'view' privilege
-    auth_grant = {"id": pierogi_id, "role": "view", "user": "jennifer"}
-    response = make_jwt_request(
-        requests.post,
-        "http://localhost:{}/auth-recipe".format(port),
-        michael_jwt,
-        auth_grant,
-    )
+    auth_grant = {"id": pierogi_id, "requires": "own", "grants": ["view"], "user": "jennifer"}
+    response = make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), michael_jwt, auth_grant)
     assert response.status_code == 200
     # jennifer still cannot patch, but can view, the recipe
-    response = make_jwt_request(
-        requests.patch,
-        "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-        jennifer_jwt,
-        another_update,
-    )
+    response = make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id), jennifer_jwt, another_update)
     assert response.status_code == 401
-    response = make_jwt_request(
-        requests.get,
-        "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-        jennifer_jwt,
-    )
+    response = make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), jennifer_jwt)
     assert response.status_code == 200
     assert json.loads(response.text) == recipe
     # jennifer gets greedy and tries to give herself edit rights to the recipe
-    auth_grant = {"id": pierogi_id, "role": "edit", "user": "jennifer"}
-    response = make_jwt_request(
-        requests.post,
-        "http://localhost:{}/auth-recipe".format(port),
-        jennifer_jwt,
-        auth_grant,
-    )
+    auth_grant = {"id": pierogi_id, "requires": "own", "grants": ["edit"], "user": "jennifer"}
+    response = make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), jennifer_jwt, auth_grant)
     assert response.status_code == 401
     # michael finds out and decides to revoke jennifer's view access
-    auth_grant = {"id": pierogi_id, "role": "view", "user": "jennifer", "revoke": True}
-    response = make_jwt_request(
-        requests.post,
-        "http://localhost:{}/auth-recipe".format(port),
-        michael_jwt,
-        auth_grant,
-    )
+    auth_grant = {"id": pierogi_id, "requires": "own", "grants": ["view"], "user": "jennifer", "revoke": True}
+    response = make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), michael_jwt, auth_grant)
     assert response.status_code == 200
     # jennifer can no longer view the recipe, and still cannot patch it (sucks to be jennifer)
-    response = make_jwt_request(
-        requests.get,
-        "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-        jennifer_jwt,
-    )
-    assert response.status_code == 401
-    response = make_jwt_request(
-        requests.patch,
-        "http://localhost:{}/recipe/{}".format(port, pierogi_id),
-        jennifer_jwt,
-        another_update,
-    )
-    assert response.status_code == 401
+    for jwt in [jennifer_jwt, kim_jwt]:
+        response = make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), jwt)
+        assert response.status_code == 401
+        response = make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id), jwt, another_update)
+        assert response.status_code == 401
+    # michael grants kim 'view' and 'edit' privilege
+    auth_grant = {"id": pierogi_id, "requires": "own", "grants": ["edit", "view"], "user": "kim"}
+    response = make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), michael_jwt, auth_grant)
+    assert response.status_code == 200
+    # kim can now view and edit the recipe
+    another_update = {"ingredients": ["potatoes", "cream", "cheddar", "salt"]}
+    response = make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt)
+    assert response.status_code == 200
+    response = make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt, another_update)
+    assert response.status_code == 200
+    # kim (edit) can grant view to jennifer
+    auth_grant = {"id": pierogi_id, "requires": "edit", "grants": ["view"], "user": "jennifer", "revoke": True}
+    response = make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), kim_jwt, auth_grant)
+    assert response.status_code == 200
+    # TEST XFIELDS
+    make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt, extra_header={'X-Fields': 'ingredients'})
 
 
 def generate_and_deploy_openapi_spec():
@@ -177,10 +150,14 @@ def generate_and_deploy_openapi_spec():
 def main():
     # wait for docker-compose
     # generate_and_deploy_openapi_spec()
+    # 80 = ApiSpec
+    # 81 = Restplus
+    # 82 = Falcon
     for port in [80, 81, 82]:
         print('Testing unsecured requests on port: ' + str(port))
         test_unsecured_requests(port)
-    for port in [8080, 8081, 8082]:
+    # for port in [8080, 8081, 8082]:
+    for port in [8080, 8081]:
         print('Testing secured requests on port: ' + str(port))
         test_secured_requests(port)
         test_deathnut_basics(port)

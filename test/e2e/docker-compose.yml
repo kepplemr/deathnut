@@ -16,7 +16,7 @@ services:
       - ../../deathnut:/deathnut
       - ./deploy:/recipe-service/deploy
     links:
-      - "redis"
+      - "redis"    
   recipe-service-restplus:
     build: .
     image: recipe-service
@@ -30,7 +30,8 @@ services:
     links:
       - "redis"
     command:
-      ["python" , "/recipe-service/flask/app-restplus.py", "--generate-openapi-template"]
+      ["python" , "/recipe-service/flask/app-restplus.py", "--generate-openapi-template", 
+      "--openapi-template-output", "/recipe-service/deploy/openapi/openapi.generated-restplus.yaml"]
   recipe-service-falcon:
     build: .
     image: recipe-service
