@@ -14,7 +14,7 @@ recipe_db = dict()
 
 app = Flask(__name__)
 redis_conn = redis.Redis(host="redis", port=6379)
-auth_o = FlaskAPISpecAuthorization(app, service="example", resource_type="recipe", 
+auth_o = FlaskAPISpecAuthorization(app, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
 auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
 auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit'])

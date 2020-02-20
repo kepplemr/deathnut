@@ -1,12 +1,11 @@
-import uuid
+from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
 from deathnut.interface.flask.flask_base import FlaskAuthorization
 from deathnut.schema.marshmallow.dn_schemas_marshmallow import (
     DeathnutAuthSchema, DeathnutErrorSchema)
 from deathnut.util.deathnut_exception import DeathnutException
+from deathnut.util.jwt import get_user_from_jwt_header
 from deathnut.util.logger import get_deathnut_logger
 from flask_apispec import marshal_with, use_kwargs
-from deathnut.util.jwt import get_user_from_jwt_header
-from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
 
 logger = get_deathnut_logger(__name__)
 
@@ -34,7 +33,7 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         @marshal_with(DeathnutErrorSchema)
         def handle_deathnut_failures(error):
             return {"message": error.args[0]}, 401
-    
+
 class FlaskAPISpecAuthEndpoint(BaseAuthEndpoint):
     def __init__(self, auth_o, app, name):
         self._app = app
@@ -59,4 +58,3 @@ class FlaskAPISpecAuthEndpoint(BaseAuthEndpoint):
                 self._auth_o.assign_roles(id, grants, **kwargs)
             return {"id": id, "user": user, "requires": requires, "grants": grants, "revoke": revoke}, 200
         return auth
-

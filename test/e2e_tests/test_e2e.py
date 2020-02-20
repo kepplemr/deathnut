@@ -1,10 +1,9 @@
+import atexit
 import filecmp
 import json
-import time
-import subprocess
-import sys
 import os
-import atexit
+import subprocess
+import time
 
 import google.auth.crypt
 import google.auth.jwt
@@ -16,7 +15,7 @@ ESP_CONTAINERS = ['esp-apispec', 'esp-restplus', 'esp-falcon']
 OTHER_CONTAINERS = ['redis']
 ALL_CONTAINERS = RECIPE_CONTAINERS + ESP_CONTAINERS + OTHER_CONTAINERS
 
-def generate_jwt(user, sa_keyfile="{}/keys/jwt-test.json".format(E2E_DIR), 
+def generate_jwt(user, sa_keyfile="{}/keys/jwt-test.json".format(E2E_DIR),
     sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com", audience="recipe-service", expiry_length=3600):
     """Generates a signed JSON Web Token using a Google API Service Account."""
     now = int(time.time())
@@ -154,7 +153,7 @@ def generate_and_deploy_openapi_spec():
             '{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag), '--validate-only']
         subprocess.check_call(generate_cmd)
         subprocess.check_call(deploy_cmd)
-        assert filecmp.cmp('{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag), 
+        assert filecmp.cmp('{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag),
             '{}/deploy/openapi/expected/{}.yaml'.format(E2E_DIR, tag))
 
 def compose_up():
@@ -188,7 +187,7 @@ def test_main():
         print('Testing secured requests on port: ' + str(port))
         secured_requests(port)
         deathnut_basics(port)
-    
+
 
 if __name__ == "__main__":
     test_main()

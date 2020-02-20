@@ -1,8 +1,8 @@
 from abc import abstractmethod
 
+from deathnut.util.abstract_classes import ABC
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
-from deathnut.util.abstract_classes import ABC
 
 logger = get_deathnut_logger(__name__)
 
@@ -37,4 +37,3 @@ class BaseAuthEndpoint(ABC):
     @abstractmethod
     def generate_auth_endpoint(self):
         pass
-    

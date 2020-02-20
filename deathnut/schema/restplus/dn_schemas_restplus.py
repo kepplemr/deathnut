@@ -1,5 +1,6 @@
 from flask_restplus import fields
 
+
 def register_restplus_schemas(api):
     deathnut_auth_schema = api.model("DeathnutAuthSchema", {
         "id": fields.String(description="Resource id", required=True),

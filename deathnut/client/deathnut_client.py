@@ -32,7 +32,7 @@ class DeathnutClient(object):
 
     def assign_role(self, user, role, resource_id):
         self._check_authenticated(user)
-        logger.warn("Assigning role <{}> to user <{}> for resource <{}>, id <{}>".format(role, user, 
+        logger.warn("Assigning role <{}> to user <{}> for resource <{}>, id <{}>".format(role, user,
             self._name, resource_id))
         self._client.hset("{}:{}:{}".format(self._name, user, role), resource_id, "T")
 
@@ -41,7 +41,7 @@ class DeathnutClient(object):
 
     def revoke_role(self, user, role, resource_id):
         self._check_authenticated(user)
-        logger.warn("Revoking role <{}> from user <{}> for resource <{}>, id <{}>".format(role, 
+        logger.warn("Revoking role <{}> from user <{}> for resource <{}>, id <{}>".format(role,
             user, self._name, resource_id))
         self._client.hdel("{}:{}:{}".format(self._name, user, role), resource_id)
 
@@ -49,7 +49,7 @@ class DeathnutClient(object):
         """redis default is a count of 10"""
         cursor = "0"
         while cursor != 0:
-            cursor, data = self._client.hscan("{}:{}:{}".format(self._name, user, role), 
+            cursor, data = self._client.hscan("{}:{}:{}".format(self._name, user, role),
                 cursor=cursor, count=page_size)
             yield [x[0].decode() for x in data.items()]
 

@@ -1,13 +1,13 @@
+from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
 from deathnut.interface.flask.flask_base import FlaskAuthorization
 from deathnut.schema.restplus.dn_schemas_restplus import \
     register_restplus_schemas
 from deathnut.util.deathnut_exception import DeathnutException
+from deathnut.util.jwt import get_user_from_jwt_header
 from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.redis import get_redis_connection
 from flask import request
 from flask_restplus import Resource
-from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
-from deathnut.util.jwt import get_user_from_jwt_header
 
 logger = get_deathnut_logger(__name__)
 
