@@ -1,4 +1,7 @@
 #!/bin/bash
 set -e
 
-nosetests --nocapture --no-byte-compile
+docker-compose build --no-cache
+docker-compose up -d recipe-service-fastapi
+
+#nosetests --nocapture --no-byte-compile

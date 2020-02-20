@@ -10,7 +10,7 @@ import google.auth.jwt
 import requests
 
 E2E_DIR = os.path.dirname(os.path.realpath(__file__))
-RECIPE_CONTAINERS = ['recipe-service-apispec', 'recipe-service-restplus', 'recipe-service-falcon']
+RECIPE_CONTAINERS = ['recipe-service-apispec', 'recipe-service-restplus', 'recipe-service-fastapi', 'recipe-service-falcon']
 ESP_CONTAINERS = ['esp-apispec', 'esp-restplus', 'esp-falcon']
 OTHER_CONTAINERS = ['redis']
 ALL_CONTAINERS = RECIPE_CONTAINERS + ESP_CONTAINERS + OTHER_CONTAINERS
@@ -178,8 +178,9 @@ def test_main():
     generate_and_deploy_openapi_spec()
     # 80 = ApiSpec
     # 81 = Restplus
-    # 82 = Falcon
-    for port in [80, 81, 82]:
+    # 82 = Fastapi
+    # 83 = Falcon
+    for port in [80, 81, 83]:
         print('Testing unsecured requests on port: ' + str(port))
         unsecured_requests(port)
     # for port in [8080, 8081, 8082]:

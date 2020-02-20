@@ -17,6 +17,9 @@ services:
       - ./deploy:/recipe-service/deploy
     links:
       - "redis"
+    command:
+      ["python" , "/recipe-service/flask/app-apispec.py", "--generate-openapi-template",
+      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/apispec.yaml"]
   recipe-service-restplus:
     build: .
     image: recipe-service
@@ -31,11 +34,11 @@ services:
       - "redis"
     command:
       ["python" , "/recipe-service/flask/app-restplus.py", "--generate-openapi-template",
-      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/restplus.yaml"]
-  recipe-service-falcon:
+      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/restplus.yaml"] 
+  recipe-service-fastapi:
     build: .
     image: recipe-service
-    container_name: recipe-service-falcon
+    container_name: recipe-service-fastapi
     ports:
       - "82:80"
     volumes:
@@ -45,7 +48,21 @@ services:
     links:
       - "redis"
     command:
-      ["python" , "/recipe-service/falcon/app.py", "--generate-openapi-template"]
+      ["uvicorn", "--port", "80", "--host", "0.0.0.0", "recipe-service.fastapi.app:app"] 
+  recipe-service-falcon:
+    build: .
+    image: recipe-service
+    container_name: recipe-service-falcon
+    ports:
+      - "83:80"
+    volumes:
+      - ./keys:/keys
+      - ../../deathnut:/deathnut
+      - ./deploy:/recipe-service/deploy
+    links:
+      - "redis"
+    command:
+      ["python" , "/recipe-service/falcon/app.py", "--generate-openapi-template"] 
   esp-apispec:
     image: gcr.io/endpoints-release/endpoints-runtime:1
     container_name: esp-apispec
@@ -72,4 +89,4 @@ services:
     volumes:
       - ./keys:/keys
     command: ["--service=recipe-service-falcon.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed",
-    "--backend=recipe-service-falcon:80", "--http_port=8082", "--service_account_key=/keys/jwt-test.json"]
+    "--backend=recipe-service-falcon:80", "--http_port=8083", "--service_account_key=/keys/jwt-test.json"]
