@@ -2,13 +2,22 @@ import filecmp
 import json
 import time
 import subprocess
+import sys
+import os
+import atexit
 
 import google.auth.crypt
 import google.auth.jwt
 import requests
 
-def generate_jwt(user, sa_keyfile="keys/jwt-test.json", sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com",
-    audience="recipe-service", expiry_length=3600):
+E2E_DIR = os.path.dirname(os.path.realpath(__file__))
+RECIPE_CONTAINERS = ['recipe-service-apispec', 'recipe-service-restplus', 'recipe-service-falcon']
+ESP_CONTAINERS = ['esp-apispec', 'esp-restplus', 'esp-falcon']
+OTHER_CONTAINERS = ['redis']
+ALL_CONTAINERS = RECIPE_CONTAINERS + ESP_CONTAINERS + OTHER_CONTAINERS
+
+def generate_jwt(user, sa_keyfile="{}/keys/jwt-test.json".format(E2E_DIR), 
+    sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com", audience="recipe-service", expiry_length=3600):
     """Generates a signed JSON Web Token using a Google API Service Account."""
     now = int(time.time())
     payload = {
@@ -44,7 +53,7 @@ def make_jwt_request(method, url, signed_jwt, data=None, extra_header=None):
     print(str(response.text))
     return response
 
-def test_unsecured_requests(port):
+def unsecured_requests(port):
     new_recipe = {"title": "Michael Cold Brew", "ingredients": ["Soda", "Coffee"]}
     new_update = {"ingredients": ["Water", "Coffee"]}
     cold_brew_recipe = make_regular_request(requests.post, "http://localhost:{}/recipe".format(port), new_recipe)
@@ -54,7 +63,7 @@ def test_unsecured_requests(port):
     assert recipe["title"] == "Michael Cold Brew"
     assert recipe["ingredients"] == ["Water", "Coffee"]
 
-def test_secured_requests(port):
+def secured_requests(port):
     jwt = generate_jwt("michael")
     new_recipe = {"title": "Michael spaghetti", "ingredients": ["Pasta", "Sour Cream"]}
     new_update = {"ingredients": ["Pasta", "Tomato Sauce"]}
@@ -65,7 +74,7 @@ def test_secured_requests(port):
     assert recipe["title"] == "Michael spaghetti"
     assert recipe["ingredients"] == ["Pasta", "Tomato Sauce"]
 
-def test_deathnut_basics(port):
+def deathnut_basics(port):
     michael_jwt = generate_jwt("michael")
     jennifer_jwt = generate_jwt("jennifer")
     kim_jwt = generate_jwt("kim")
@@ -126,32 +135,60 @@ def test_deathnut_basics(port):
     make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt, extra_header={'X-Fields': 'ingredients'})
 
 def generate_and_deploy_openapi_spec():
-    for container, tag in [('recipe-service-apispec', 'apispec'), ('recipe-service-restplus', 'restplus')]:
+    for container in RECIPE_CONTAINERS:
+        tag = container.split('-')[-1]
+        # fastapi requires 3.0
+        # TODO
+        if tag == 'fastapi': #and sys.version_info < (3, 0):
+            print("Error: fastapi requires python 3")
+            continue
+        if tag == 'falcon':
+            print("Falcon ain't dont yet")
+            continue
         generate_cmd = ['docker', 'exec', container, 'python',
             '/recipe-service/generate_openapi/generate_configs.py', '-b',
             '/recipe-service/deploy/openapi/generated/{}.yaml'.format(tag), '-o',
             '/recipe-service/deploy/openapi/overrides/{}.yaml'.format(tag), '-p',
             '/recipe-service/deploy/openapi/output']
         deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
-            'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
+            '{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag), '--validate-only']
         subprocess.check_call(generate_cmd)
         subprocess.check_call(deploy_cmd)
-        assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag), 'deploy/openapi/expected/{}.yaml'.format(tag))
+        assert filecmp.cmp('{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag), 
+            '{}/deploy/openapi/expected/{}.yaml'.format(E2E_DIR, tag))
 
-def main():
+def compose_up():
+    compose_conf = '/'.join([E2E_DIR, 'docker-compose.yml'])
+    compose_build_cmd = ['docker-compose', '-f', compose_conf, 'build', '--no-cache']
+    compose_up_cmd = ['docker-compose', '-f', compose_conf, 'up', '-d']
+    subprocess.check_output(compose_build_cmd)
+    subprocess.check_output(compose_up_cmd)
+
+def on_exit():
+    for container in ALL_CONTAINERS:
+        stop_cmd = ['docker', 'stop', container]
+        rm_cmd = ['docker', 'rm', container]
+        subprocess.check_output(stop_cmd)
+        subprocess.check_output(rm_cmd)
+
+def test_main():
+    atexit.register(on_exit)
+    compose_up()
     # wait for docker-compose
+    time.sleep(10)
     generate_and_deploy_openapi_spec()
     # 80 = ApiSpec
     # 81 = Restplus
     # 82 = Falcon
     for port in [80, 81, 82]:
         print('Testing unsecured requests on port: ' + str(port))
-        test_unsecured_requests(port)
+        unsecured_requests(port)
     # for port in [8080, 8081, 8082]:
     for port in [8080, 8081]:
         print('Testing secured requests on port: ' + str(port))
-        test_secured_requests(port)
-        test_deathnut_basics(port)
+        secured_requests(port)
+        deathnut_basics(port)
+    
 
 if __name__ == "__main__":
-    main()
+    test_main()

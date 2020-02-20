@@ -4,7 +4,6 @@ from deathnut.util.redis import get_redis_connection
 
 logger = get_deathnut_logger(__name__)
 
-
 class DeathnutClient(object):
     def __init__(self, service, resource_type=None, **kwargs):
         """
@@ -42,22 +41,16 @@ class DeathnutClient(object):
 
     def revoke_role(self, user, role, resource_id):
         self._check_authenticated(user)
-        logger.warn(
-            "Revoking role <{}> from user <{}> for resource <{}>, id <{}>".format(
-                role, user, self._name, resource_id
-            )
-        )
+        logger.warn("Revoking role <{}> from user <{}> for resource <{}>, id <{}>".format(role, 
+            user, self._name, resource_id))
         self._client.hdel("{}:{}:{}".format(self._name, user, role), resource_id)
 
     def get_resources(self, user, role, page_size=10):
         """redis default is a count of 10"""
         cursor = "0"
         while cursor != 0:
-            cursor, data = self._client.hscan(
-                "{}:{}:{}".format(self._name, user, role),
-                cursor=cursor,
-                count=page_size,
-            )
+            cursor, data = self._client.hscan("{}:{}:{}".format(self._name, user, role), 
+                cursor=cursor, count=page_size)
             yield [x[0].decode() for x in data.items()]
 
     def get_roles(self, user, resource_type):
