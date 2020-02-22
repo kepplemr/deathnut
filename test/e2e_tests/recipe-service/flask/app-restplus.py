@@ -68,6 +68,10 @@ class Recipe(Resource):
 @generate_openapi_template
 def create_app():
     api.init_app(app)
+    logger.warn("App type -> " + str(type(app)))
+    #logger.warn("App dir -> " + str(dir(app)))
+    logger.warn("App config -> " + str(app.config))
+    logger.warn("App extensions -> " + str(app.extensions))
     return app
 
 

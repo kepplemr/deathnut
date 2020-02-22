@@ -46,17 +46,6 @@ def patch(id, **kwargs):
         recipe_db[id][kw] = kwargs[kw]
     return recipe_db[id], 200
 
-@app.errorhandler(401)
-@app.errorhandler(422)
-@app.errorhandler(400)
-def handle_error(err):
-    headers = err.data.get("headers", None)
-    messages = err.data.get("messages", ["Invalid request."])
-    if headers:
-        return jsonify({"errors": messages}), err.code, headers
-    else:
-        return jsonify({"errors": messages}), err.code
-
 @generate_openapi_template
 def create_app():
     FlaskApiSpec(app).register_existing_resources()
@@ -64,4 +53,8 @@ def create_app():
 
 if __name__ == "__main__":
     app = create_app()
+    logger.warn("App type -> " + str(type(app)))
+    #logger.warn("App dir -> " + str(dir(app)))
+    logger.warn("App config -> " + str(app.config))
+    logger.warn("App extensions -> " + str(app.extensions))
     app.run(debug=True, port=80, host="0.0.0.0")

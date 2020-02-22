@@ -113,6 +113,10 @@ def _create_template_from_app(app, template_output, swagger_spec_url):
     logging.info("Generating OpenAPI template from Flask swagger specs")
     test_client = app.test_client()
     template_dict = _get_dict_with_defaults()
+    # TODO
+    openapi_schema = get_openapi_schema()
+    template_dict.update(openapi_schema)
+    #
     with app.test_client() as test_client:
         template_dict.update(json.loads(test_client.get(swagger_spec_url).data))
     _handle_trailing_slashes(template_dict)

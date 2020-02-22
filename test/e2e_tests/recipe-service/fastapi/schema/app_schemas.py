@@ -1,7 +1,14 @@
 from pydantic import BaseModel
+from typing import List
+class Recipe(BaseModel):
+    title: str
+    ingredients: List[str]
 
-class Item(BaseModel):
-    name: str
-    description: str = None
-    price: float
-    tax: float = None
+class RecipeWithId(Recipe):
+    id: str
+    title: str
+    ingredients: List[str]
+
+class PartialRecipe(BaseModel):
+    title: str = None
+    ingredients: List[str] = None
