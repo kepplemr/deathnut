@@ -1,0 +1,7 @@
+filename: fastapi.yaml
+host: recipe-service-fastapi.endpoints.wellio-dev-michael.cloud.goog
+info:
+  description: Example recipe service
+  title: Recipe Service (FastApi)
+security:
+  - firebase-whatever-production: []

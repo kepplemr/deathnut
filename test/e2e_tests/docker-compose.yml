@@ -12,6 +12,7 @@ services:
     ports:
       - "80:80"
     volumes:
+      - ./recipe-service:/recipe-service
       - ./keys:/keys
       - ../../deathnut:/deathnut
       - ./deploy:/recipe-service/deploy
@@ -27,6 +28,7 @@ services:
     ports:
       - "81:80"
     volumes:
+      - ./recipe-service:/recipe-service
       - ./keys:/keys
       - ../../deathnut:/deathnut
       - ./deploy:/recipe-service/deploy
@@ -42,6 +44,7 @@ services:
     ports:
       - "82:80"
     volumes:
+      - ./recipe-service:/recipe-service
       - ./keys:/keys
       - ../../deathnut:/deathnut
       - ./deploy:/recipe-service/deploy

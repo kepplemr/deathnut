@@ -48,13 +48,10 @@ def patch(id, **kwargs):
 
 @generate_openapi_template
 def create_app():
+    #app.config['APISPEC_SWAGGER_URL'] = '/wtf.json'
     FlaskApiSpec(app).register_existing_resources()
     return app
 
 if __name__ == "__main__":
     app = create_app()
-    logger.warn("App type -> " + str(type(app)))
-    #logger.warn("App dir -> " + str(dir(app)))
-    logger.warn("App config -> " + str(app.config))
-    logger.warn("App extensions -> " + str(app.extensions))
     app.run(debug=True, port=80, host="0.0.0.0")

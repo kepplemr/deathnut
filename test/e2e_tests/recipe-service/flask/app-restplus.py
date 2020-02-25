@@ -47,7 +47,6 @@ class RecipeCreate(Resource):
         auth_o.assign_roles(new_id, ["own", "edit", "view"], **kwargs)
         return new_recipe, 200
 
-
 @ns.route("/<string:id>")
 class Recipe(Resource):
     @ns.marshal_with(recipe_with_id)
@@ -64,16 +63,10 @@ class Recipe(Resource):
             recipe_db[id][key] = partial_recipe[key]
         return recipe_db[id], 200
 
-
 @generate_openapi_template
 def create_app():
     api.init_app(app)
-    logger.warn("App type -> " + str(type(app)))
-    #logger.warn("App dir -> " + str(dir(app)))
-    logger.warn("App config -> " + str(app.config))
-    logger.warn("App extensions -> " + str(app.extensions))
     return app
-
 
 if __name__ == "__main__":
     app = create_app()

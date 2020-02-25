@@ -27,10 +27,5 @@ async def patch_recipe(id: str, recipe: PartialRecipe):
         recipe_db[id][update] = getattr(recipe, update)
     return recipe_db[id]
 
-logger.warn("App type -> " + str(type(app)))
-logger.warn("App dir -> " + str(dir(app)))
-logger.warn("Openapi schema -> " + str(app.openapi_schema))
-logger.warn("Openapi url -> " + str(app.openapi_url))
-logger.warn("Openapi -> " + str(app.openapi()))
-# generate_template_from_app(app, force_run=True)
+generate_template_from_app(app, template_output="deploy/openapi/generated/fastapi.yaml", force_run=True)
 

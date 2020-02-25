@@ -115,6 +115,7 @@ spec.components.schema("RecipeWithId", schema=RecipeWithId)
 spec.components.schema("RecipePartial", schema=RecipePartial)
 spec.path(resource=recipe_resource)
 spec.path(resource=recipe_create_and_list)
+logger.warn("App type -> " + str(type(app)))
 print("Spec -> \n" + str(spec.to_yaml()))
 
 if __name__ == "__main__":

@@ -10,10 +10,14 @@ import json
 import logging
 import os
 import sys
-
+import flask
+import fastapi
 import yaml
 
+from deathnut.util.logger import get_deathnut_logger
+
 default_file_location = "deploy/openapi/openapi.generated.yaml"
+logger = get_deathnut_logger(__name__)
 
 
 def generate_openapi_template(func):
@@ -26,7 +30,7 @@ def generate_openapi_template(func):
         flags = _handle_arg_parsing()
         app = func(*args, **kwargs)
         if flags.generate_openapi_template:
-            swagger_spec_url = _get_swagger_url(app)
+            swagger_spec_url = ''
             _create_template_from_app(
                 app, flags.openapi_template_output, swagger_spec_url
             )
@@ -48,7 +52,7 @@ def generate_template_from_app(app, template_output=None, force_run=False):
     flags = _handle_arg_parsing()
     template_output = template_output or flags.openapi_template_output
     if force_run or flags.generate_openapi_template:
-        swagger_spec_url = _get_swagger_url(app)
+        swagger_spec_url = ''
         _create_template_from_app(app, template_output, swagger_spec_url)
 
 
@@ -81,44 +85,33 @@ def _handle_arg_parsing():
     sys.argv = sys.argv[:1] + not_for_us
     return flags
 
+def get_flask_specs(app):
+    with app.test_client() as client:
+        if app.extensions.get('restplus'):
+            swagger_spec_url = next((str(x) for x in app.url_map.iter_rules() if str(x.endpoint) == "specs"), '/swagger.json')
+        else:
+            swagger_spec_url = app.config.get("APISPEC_SWAGGER_URL", "/swagger/")
+        logger.info("Flask app swagger URL: " + swagger_spec_url)
+        return json.loads(client.get(swagger_spec_url).data)
 
-def _get_swagger_url(app, **kwargs):
-    """
-    Function to extract the swagger URL from flask-restplus and flask-apispec applications. If it
-    was passed as kwarg swagger_spec_url, roll with that. If not, inspect the underlying flask
-    application and attempt to extract. If all else fails, print an error and try /api/swagger.json.
-    """
-    app.config["SERVER_NAME"] = "127.0.0.1"
-    with app.app_context():
-        swagger_spec = ""
-        try:
-            # restplus
-            swagger_spec = str(
-                list(
-                    filter(
-                        lambda x: str(x.endpoint).endswith("specs"),
-                        app.url_map.iter_rules(),
-                    )
-                ).pop()
-            )
-        except:
-            # apispec custom or default
-            swagger_spec = app.config.get("APISPEC_SWAGGER_URL", "/swagger/")
-        finally:
-            logging.info("Swagger location: " + swagger_spec)
-            return swagger_spec
+def get_fastapi_specs(app):
+    return app.openapi()
 
+def unsupported_app_type(app):
+    raise NotImplementedError('Unsupported application type: ' + str(type(app)))
+
+def get_swagger_specs(app):
+    return {
+        flask.app.Flask: get_flask_specs,
+        fastapi.applications.FastAPI: get_fastapi_specs
+    }.get(type(app), unsupported_app_type)(app)
 
 def _create_template_from_app(app, template_output, swagger_spec_url):
     logging.info("Generating OpenAPI template from Flask swagger specs")
-    test_client = app.test_client()
     template_dict = _get_dict_with_defaults()
-    # TODO
-    openapi_schema = get_openapi_schema()
+    openapi_schema = get_swagger_specs(app)
+    logger.warn("Specs -> " + str(openapi_schema))
     template_dict.update(openapi_schema)
-    #
-    with app.test_client() as test_client:
-        template_dict.update(json.loads(test_client.get(swagger_spec_url).data))
     _handle_trailing_slashes(template_dict)
     _handle_operationIds(template_dict)
     _handle_body_arrays(template_dict)
@@ -142,7 +135,7 @@ def _handle_trailing_slashes(template_dict):
         Template dictionary, possibly containing bad paths such as '/api/ingredients/' which will
         now be dropped from GCE specs.
     """
-    for path in list(template_dict["paths"]):
+    for path in list(template_dict.get('paths', [])):
         if path.endswith("/"):
             del template_dict["paths"][path]
 
@@ -151,7 +144,7 @@ def _remove_options_operations(template_dict):
     """
     Remove 'options' operations from endpoint spec
     """
-    for path in list(template_dict["paths"]):
+    for path in list(template_dict.get('paths', [])):
         for operation in list(template_dict["paths"][path]):
             if operation == "options":
                 del template_dict["paths"][path][operation]
