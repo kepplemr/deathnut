@@ -1,9 +1,10 @@
 import uuid
+import uvicorn
 from fastapi import FastAPI
 
 from deathnut.util.logger import get_deathnut_logger
-from .schema.app_schemas import Recipe, RecipeWithId, PartialRecipe
-from ..generate_openapi.generate_template import generate_template_from_app
+from schema.app_schemas import Recipe, RecipeWithId, PartialRecipe
+from generate_openapi.generate_template import generate_openapi_template
 
 app = FastAPI()
 logger = get_deathnut_logger(__name__)
@@ -27,5 +28,13 @@ async def patch_recipe(id: str, recipe: PartialRecipe):
         recipe_db[id][update] = getattr(recipe, update)
     return recipe_db[id]
 
-generate_template_from_app(app, template_output="deploy/openapi/generated/fastapi.yaml", force_run=True)
+@generate_openapi_template
+def get_app():
+    return app
+
+if __name__ == "__main__":
+    app = get_app()
+    uvicorn.run("recipe-service.fastapi.app:app", debug=True, port=80, host="0.0.0.0")
+
+#generate_template_from_app(app, template_output="deploy/openapi/generated/fastapi.yaml", force_run=True)
 

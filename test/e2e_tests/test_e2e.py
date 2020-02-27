@@ -13,11 +13,15 @@ import requests
 E2E_DIR = os.path.dirname(os.path.realpath(__file__))
 RECIPE_CONTAINERS = ['recipe-service-apispec', 'recipe-service-restplus', 'recipe-service-fastapi', 'recipe-service-falcon']
 ESP_CONTAINERS = ['esp-apispec', 'esp-restplus', 'esp-falcon']
-OTHER_CONTAINERS = ['redis']
-ALL_CONTAINERS = RECIPE_CONTAINERS + ESP_CONTAINERS + OTHER_CONTAINERS
+OTHER_CONTAINERS = ['api-converter']
+SERVICE_CONTAINERS = RECIPE_CONTAINERS + ESP_CONTAINERS + ['redis']
+ALL_CONTAINERS = SERVICE_CONTAINERS + OTHER_CONTAINERS
+COMPOSE_CONF = '/'.join([E2E_DIR, 'docker-compose.yml'])
+
 
 def generate_jwt(user, sa_keyfile="{}/keys/jwt-test.json".format(E2E_DIR),
-    sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com", audience="recipe-service", expiry_length=3600):
+                 sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com",
+                 audience="recipe-service", expiry_length=3600):
     """Generates a signed JSON Web Token using a Google API Service Account."""
     now = int(time.time())
     payload = {
@@ -36,12 +40,14 @@ def generate_jwt(user, sa_keyfile="{}/keys/jwt-test.json".format(E2E_DIR),
     jwt = google.auth.jwt.encode(signer, payload)
     return jwt
 
+
 def make_regular_request(method, url, data=None):
     headers = {"content-type": "application/json"}
     response = method(url, headers=headers, data=json.dumps(data))
-    #print(str(response.text))
+    # print(str(response.text))
     response.raise_for_status()
     return response
+
 
 def make_jwt_request(method, url, signed_jwt, data=None, extra_header=None):
     headers = {"Authorization": "Bearer {}".format(signed_jwt.decode("utf-8")),
@@ -53,6 +59,7 @@ def make_jwt_request(method, url, signed_jwt, data=None, extra_header=None):
     print(str(response.text))
     return response
 
+
 def unsecured_requests(port):
     new_recipe = {"title": "Michael Cold Brew", "ingredients": ["Soda", "Coffee"]}
     new_update = {"ingredients": ["Water", "Coffee"]}
@@ -62,6 +69,7 @@ def unsecured_requests(port):
     recipe = json.loads(make_regular_request(requests.get, "http://localhost:{}/recipe/{}".format(port, cold_brew_id)).text)
     assert recipe["title"] == "Michael Cold Brew"
     assert recipe["ingredients"] == ["Water", "Coffee"]
+
 
 def secured_requests(port):
     jwt = generate_jwt("michael")
@@ -73,6 +81,7 @@ def secured_requests(port):
     recipe = json.loads(make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, spaghetti_id), jwt).text)
     assert recipe["title"] == "Michael spaghetti"
     assert recipe["ingredients"] == ["Pasta", "Tomato Sauce"]
+
 
 def deathnut_basics(port):
     michael_jwt = generate_jwt("michael")
@@ -134,6 +143,7 @@ def deathnut_basics(port):
     # TEST XFIELDS
     make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt, extra_header={'X-Fields': 'ingredients'})
 
+
 def generate_and_deploy_openapi_spec():
     for container in RECIPE_CONTAINERS:
         tag = container.split('-')[-1]
@@ -145,6 +155,8 @@ def generate_and_deploy_openapi_spec():
         if tag == 'falcon':
             print("Falcon ain't dont yet")
             continue
+        if tag == 'fastapi':
+            run_container('api-converter')
         generate_cmd = ['docker', 'exec', container, 'python',
             '/recipe-service/generate_openapi/generate_configs.py', '-b',
             '/recipe-service/deploy/openapi/generated/{}.yaml'.format(tag), '-o',
@@ -157,12 +169,18 @@ def generate_and_deploy_openapi_spec():
         assert filecmp.cmp('{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag),
             '{}/deploy/openapi/expected/{}.yaml'.format(E2E_DIR, tag))
 
+
 def compose_up():
-    compose_conf = '/'.join([E2E_DIR, 'docker-compose.yml'])
-    compose_build_cmd = ['docker-compose', '-f', compose_conf, 'build', '--no-cache']
-    compose_up_cmd = ['docker-compose', '-f', compose_conf, 'up', '-d']
-    subprocess.check_output(compose_build_cmd)
+    compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache']
+    # subprocess.check_output(compose_build_cmd)
+    for container in SERVICE_CONTAINERS:
+        run_container(container)
+
+
+def run_container(container):
+    compose_up_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'up', '-d', container]
     subprocess.check_output(compose_up_cmd)
+
 
 def on_exit():
     for container in ALL_CONTAINERS:
@@ -170,6 +188,7 @@ def on_exit():
         rm_cmd = ['docker', 'rm', container]
         subprocess.check_output(stop_cmd)
         subprocess.check_output(rm_cmd)
+
 
 def test_main():
     #atexit.register(on_exit)

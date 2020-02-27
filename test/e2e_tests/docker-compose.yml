@@ -51,7 +51,9 @@ services:
     links:
       - "redis"
     command:
-      ["uvicorn", "--port", "80", "--host", "0.0.0.0", "recipe-service.fastapi.app:app"] 
+      ["python" , "/recipe-service/fastapi/app.py", "--generate-openapi-template",
+      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/fastapi.yaml"]      
+      #["uvicorn", "--port", "80", "--host", "0.0.0.0", "recipe-service.fastapi.app:app"] 
   recipe-service-falcon:
     build: .
     image: recipe-service
@@ -93,3 +95,10 @@ services:
       - ./keys:/keys
     command: ["--service=recipe-service-falcon.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed",
     "--backend=recipe-service-falcon:80", "--http_port=8083", "--service_account_key=/keys/jwt-test.json"]
+  api-converter:
+    image: ioggstream/api-spec-converter
+    container_name: converter
+    volumes:
+      - ./deploy/openapi/generated:/tmp
+    command: ["--from", "openapi_3", "--to", "swagger_2", "-d", "--syntax", "yaml", "--order",
+      "alpha", "--check", "/tmp/fastapi.yaml"]

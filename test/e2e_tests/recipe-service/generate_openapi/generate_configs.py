@@ -27,6 +27,8 @@ try:
 except ImportError:
     from collections import Mapping
 
+from util import clean_dict, write_yaml_file
+
 
 def dict_merge(dct, merge_dct, merge_lists=False):
     """
@@ -51,11 +53,7 @@ def dict_merge(dct, merge_dct, merge_lists=False):
         default.
     """
     for key, val in merge_dct.items():
-        if (
-            key in dct
-            and isinstance(dct[key], dict)
-            and isinstance(merge_dct[key], Mapping)
-        ):
+        if (key in dct and isinstance(dct[key], dict) and isinstance(merge_dct[key], Mapping)):
             dict_merge(dct[key], merge_dct[key])
         elif isinstance(val, list) and merge_lists:
             dct[key] = dct.get(key, []) + val
@@ -63,15 +61,8 @@ def dict_merge(dct, merge_dct, merge_lists=False):
             dct[key] = merge_dct[key]
 
 
-def output_conf(filename, output_dict, path_prefix):
-    yaml.emitter.Emitter.process_tag = lambda *args: None
-    with open("/".join([path_prefix, filename]), "w") as outfile:
-        yaml.dump(output_dict, outfile, default_flow_style=False)
-
-
-def generate_yaml_confs(
-    base_template_filename, overrides_filename, path_prefix=".", merge_lists=False
-):
+def generate_yaml_confs(base_template_filename, overrides_filename, path_prefix=".",
+                        merge_lists=False):
     """
     This function recursively merges two dictionaries.
     Parameters
@@ -95,28 +86,18 @@ def generate_yaml_confs(
         for yaml_dict in list(yaml.safe_load_all(cfg_f)):
             temp = copy.deepcopy(base_template_dict)
             dict_merge(temp, yaml_dict, merge_lists)
-            output_conf(temp.pop("filename"), dict(sorted(temp.items())), path_prefix)
+            clean_dict(temp)
+            write_yaml_file('/'.join([path_prefix, temp.pop("filename")]), dict(temp.items()))
 
 
 def main():
     parser = argparse.ArgumentParser(description="YAML file generation utility")
-    parser.add_argument(
-        "-b",
-        "--base",
-        type=str,
-        required=True,
-        help="base YAML filename to inherit from",
-    )
-    parser.add_argument(
-        "-o", "--overrides", type=str, required=True, help="template overrides file"
-    )
-    parser.add_argument(
-        "-p",
-        "--path",
-        type=str,
-        help="output path for generated confs (default is pwd)",
-        default=".",
-    )
+    parser.add_argument("-b", "--base", type=str, required=True,
+                        help="base YAML filename to inherit from")
+    parser.add_argument("-o", "--overrides", type=str, required=True,
+                        help="template overrides file")
+    parser.add_argument("-p", "--path", type=str,
+                        help="output path for generated confs (default is pwd)", default=".")
     parser.add_argument("-m", "--merge-lists", action="store_true")
     args = parser.parse_args()
     generate_yaml_confs(args.base, args.overrides, args.path, args.merge_lists)
