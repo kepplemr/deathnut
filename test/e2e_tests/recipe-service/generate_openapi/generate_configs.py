@@ -27,7 +27,7 @@ try:
 except ImportError:
     from collections import Mapping
 
-from util import clean_dict, write_yaml_file
+from util import clean_dict, write_yaml_file, get_dict_with_defaults
 
 
 def dict_merge(dct, merge_dct, merge_lists=False):
@@ -79,12 +79,12 @@ def generate_yaml_confs(base_template_filename, overrides_filename, path_prefix=
         If True, keys with list values will be combined together, If False (default), the override
         list will completely replace the original.
     """
-    base_template_dict = {}
+    configs = get_dict_with_defaults()
     with open(base_template_filename, "r") as cfg_f:
-        base_template_dict = dict(**yaml.safe_load(cfg_f))
+        configs.update(dict(**yaml.safe_load(cfg_f)))
     with open(overrides_filename, "r") as cfg_f:
         for yaml_dict in list(yaml.safe_load_all(cfg_f)):
-            temp = copy.deepcopy(base_template_dict)
+            temp = copy.deepcopy(configs)
             dict_merge(temp, yaml_dict, merge_lists)
             clean_dict(temp)
             write_yaml_file('/'.join([path_prefix, temp.pop("filename")]), dict(temp.items()))

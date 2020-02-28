@@ -111,13 +111,6 @@ def get_swagger_specs(app):
 
 def _create_template_from_app(app, template_output):
     logging.info("Generating OpenAPI template from Flask swagger specs")
-    template_dict = _get_dict_with_defaults()
     openapi_schema = get_swagger_specs(app)
-    template_dict.update(openapi_schema)
-    clean_dict(template_dict)
-    write_yaml_file(template_output, template_dict)
-
-
-def _get_dict_with_defaults():
-    default_path = "/".join([os.path.dirname(os.path.realpath(__file__)), "defaults.yaml"])
-    return load_yaml_file(default_path)
+    clean_dict(openapi_schema)
+    write_yaml_file(template_output, openapi_schema)

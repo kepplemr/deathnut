@@ -150,6 +150,7 @@ def generate_and_deploy_openapi_spec():
         # fastapi requires 3.0
         # TODO
         if tag == 'fastapi' and sys.version_info < (3, 0):
+            print(sys.version_info)
             print("Error: fastapi requires python 3")
             continue
         if tag == 'falcon':

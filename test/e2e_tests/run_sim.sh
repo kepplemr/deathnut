@@ -6,4 +6,5 @@ set -e
 # docker-compose up -d recipe-service-apispec
 # docker-compose up -d recipe-service-restplus
 
-nosetests --nocapture --no-byte-compile
+#nosetests --nocapture --no-byte-compile
+python test_e2e.py

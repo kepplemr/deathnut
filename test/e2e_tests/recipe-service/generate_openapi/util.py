@@ -1,5 +1,5 @@
 import logging
-
+import os
 import yaml
 
 
@@ -12,6 +12,11 @@ def write_yaml_file(filename, swagger_dict):
     yaml.emitter.Emitter.process_tag = lambda *args: None
     with open(filename, "w") as outfile:
         yaml.dump(dict(sorted(swagger_dict.items())), outfile, default_flow_style=False)
+
+
+def get_dict_with_defaults():
+    default_path = "/".join([os.path.dirname(os.path.realpath(__file__)), "defaults.yaml"])
+    return load_yaml_file(default_path)
 
 # def output_conf(filename, output_dict, path_prefix):
 #     yaml.emitter.Emitter.process_tag = lambda *args: None
