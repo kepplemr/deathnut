@@ -149,15 +149,19 @@ def generate_and_deploy_openapi_spec():
         tag = container.split('-')[-1]
         # fastapi requires 3.0
         # TODO
-        if tag == 'fastapi' and sys.version_info < (3, 0):
-            print(sys.version_info)
-            print("Error: fastapi requires python 3")
-            continue
+        if tag == 'fastapi':
+            if sys.version_info < (3, 0):
+                print("Error: fastapi requires python 3")
+                continue
+            else:
+                run_container('api-converter')
+                time.sleep(30)
+                replace_oas3_cmd = ['docker', 'logs', 'converter']
+                subprocess.check_call(replace_oas3_cmd,
+                    stdout=open('{}/deploy/openapi/generated/{}.yaml'.format(E2E_DIR, tag), 'w'))
         if tag == 'falcon':
             print("Falcon ain't dont yet")
             continue
-        if tag == 'fastapi':
-            run_container('api-converter')
         generate_cmd = ['docker', 'exec', container, 'python',
             '/recipe-service/generate_openapi/generate_configs.py', '-b',
             '/recipe-service/deploy/openapi/generated/{}.yaml'.format(tag), '-o',
