@@ -146,6 +146,11 @@ paths:
           schema:
             $ref: '#/definitions/HTTPValidationError'
       summary: Patch Recipe
+schemes:
+  - http
+  - https
+security:
+  - api_key: []
 swagger: '2.0'
 x-components: {}
 

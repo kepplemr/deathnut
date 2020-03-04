@@ -1,5 +1,6 @@
 import atexit
 import filecmp
+import glob
 import json
 import os
 import subprocess
@@ -13,13 +14,13 @@ import requests
 E2E_DIR = os.path.dirname(os.path.realpath(__file__))
 RECIPE_CONTAINERS = ['recipe-service-apispec', 'recipe-service-restplus', 'recipe-service-fastapi', 'recipe-service-falcon']
 ESP_CONTAINERS = ['esp-apispec', 'esp-restplus', 'esp-falcon']
-OTHER_CONTAINERS = ['api-converter']
+OTHER_CONTAINERS = ['converter']
 SERVICE_CONTAINERS = RECIPE_CONTAINERS + ESP_CONTAINERS + ['redis']
 ALL_CONTAINERS = SERVICE_CONTAINERS + OTHER_CONTAINERS
 COMPOSE_CONF = '/'.join([E2E_DIR, 'docker-compose.yml'])
 
 
-def generate_jwt(user, sa_keyfile="{}/keys/jwt-test.json".format(E2E_DIR),
+def generate_jwt(user, sa_keyfile="{}/recipe-service/keys/jwt-test.json".format(E2E_DIR),
                  sa_email="jwt-test@wellio-dev-michael.iam.gserviceaccount.com",
                  audience="recipe-service", expiry_length=3600):
     """Generates a signed JSON Web Token using a Google API Service Account."""
@@ -144,36 +145,40 @@ def deathnut_basics(port):
     make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt, extra_header={'X-Fields': 'ingredients'})
 
 
+def remove_output():
+    nuke_me = glob.glob('recipe-service/deploy/openapi/generated/*') + glob.glob('recipe-service/deploy/openapi/output/*')
+    for to_nuke in nuke_me:
+        os.remove(to_nuke)
+
+
 def generate_and_deploy_openapi_spec():
     for container in RECIPE_CONTAINERS:
         tag = container.split('-')[-1]
-        # fastapi requires 3.0
-        # TODO
-        if tag == 'fastapi':
-            if sys.version_info < (3, 0):
-                print("Error: fastapi requires python 3")
-                continue
-            else:
-                run_container('api-converter')
-                time.sleep(30)
-                replace_oas3_cmd = ['docker', 'logs', 'converter']
-                subprocess.check_call(replace_oas3_cmd,
-                    stdout=open('{}/deploy/openapi/generated/{}.yaml'.format(E2E_DIR, tag), 'w'))
+        if tag == 'fastapi' and sys.version_info < (3, 0):
+            print('fastapi requires python 3')
+            continue
         if tag == 'falcon':
             print("Falcon ain't dont yet")
             continue
-        generate_cmd = ['docker', 'exec', container, 'python',
-            '/recipe-service/generate_openapi/generate_configs.py', '-b',
-            '/recipe-service/deploy/openapi/generated/{}.yaml'.format(tag), '-o',
-            '/recipe-service/deploy/openapi/overrides/{}.yaml'.format(tag), '-p',
-            '/recipe-service/deploy/openapi/output']
+        # no need to be inside container
+        os.chdir('/'.join([E2E_DIR, 'recipe-service']))
+        generate_cmd = ['python',
+            'generate_openapi/generate_configs.py', '-b',
+            'deploy/openapi/generated/{}.yaml'.format(tag), '-o',
+            'deploy/openapi/overrides/{}.yaml'.format(tag), '-p',
+            'deploy/openapi/output']
         deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
-            '{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag), '--validate-only']
+            'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
         subprocess.check_call(generate_cmd)
         subprocess.check_call(deploy_cmd)
-        assert filecmp.cmp('{}/deploy/openapi/output/{}.yaml'.format(E2E_DIR, tag),
-            '{}/deploy/openapi/expected/{}.yaml'.format(E2E_DIR, tag))
-
+        try:
+            assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag),
+                'deploy/openapi/expected/{}.yaml'.format(tag))            
+        except AssertionError as ae:
+            print('Output -> ' + open('deploy/openapi/output/{}.yaml'.format(tag), 'r').read())
+            print('Expected -> ' + open('deploy/openapi/expected/{}.yaml'.format(tag), 'r').read())
+            raise ae
+            
 
 def compose_up():
     compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache']
@@ -188,11 +193,12 @@ def run_container(container):
 
 
 def on_exit():
+    #remove_output()
     for container in ALL_CONTAINERS:
         stop_cmd = ['docker', 'stop', container]
         rm_cmd = ['docker', 'rm', container]
-        subprocess.check_output(stop_cmd)
-        subprocess.check_output(rm_cmd)
+        subprocess.call(stop_cmd)
+        subprocess.call(rm_cmd)
 
 
 def test_main():

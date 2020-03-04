@@ -1,23 +1,15 @@
 """
-This module generates an OpenAPI base template from the FLask applications swagger specs. This
-output is used along with the env-specific 'overrides' (see generate_configs.py) to create our GCE
-OpenAPI spec files.
-The intention is to allow developers to modify an endpoint's definition in one place rather than up
-to nine (flask app and jwt and non-jwt OpenAPI spec for each env).
+This module generates an OpenAPI base template from an application instance. Current supports Flask
+and fastapi.
 """
 import argparse
 import json
 import logging
 import sys
 
-import fastapi
-import flask
-
-from deathnut.util.logger import get_deathnut_logger
-from util import write_yaml_file, clean_dict
+from util import clean_dict, write_yaml_file, get_dict_with_defaults, dict_merge
 
 DEFAULT_FILE_LOCATION = "deploy/openapi/openapi.generated.yaml"
-logger = get_deathnut_logger(__name__)
 
 
 def generate_openapi_template(func):
@@ -82,7 +74,7 @@ def _handle_arg_parsing():
     return flags
 
 
-def get_flask_specs(app):
+def _get_flask_specs(app):
     """
     Function to return swagger doc dict for flask apps (apispec and restplus). Determines swagger 
     location, starts a test app, and returns the pulled docs.
@@ -98,14 +90,14 @@ def get_flask_specs(app):
     with app.test_client() as client:
         if app.extensions.get('restplus'):
             swagger_spec_url = next((str(x) for x in app.url_map.iter_rules() if
-                                    str(x.endpoint) == "specs"), '/swagger.json')
+                                    str(x.endpoint).endswith("specs")), '/swagger.json')
         else:
             swagger_spec_url = app.config.get("APISPEC_SWAGGER_URL", "/swagger/")
-        logger.info("Flask app swagger URL: %s", swagger_spec_url)
+        logging.info("Flask app swagger URL: %s", swagger_spec_url)
         return json.loads(client.get(swagger_spec_url).data)
 
 
-def get_fastapi_specs(app):
+def _get_fastapi_specs(app):
     """
     Function to return oas3 specs from fastapi app. Hopefully in the future it will be possible
     to 1) perform the OAS3 -> swagger2 conversion ourselves or 2) GCP will accept OAS specs and we
@@ -124,22 +116,25 @@ def get_fastapi_specs(app):
     return app.openapi()
 
 
-def unsupported_app_type(app):
+def _unsupported_app_type(app):
     raise NotImplementedError('Unsupported application type: ' + str(type(app)))
 
 
-def get_swagger_specs(app):
+def _get_swagger_specs(app):
     """
     Convenient switch for all supported app types, presently just flask and fastapi
+
+    We need to support python2 which can't use fastapi, so use names instead of type.
     """
     return {
-        flask.app.Flask: get_flask_specs,
-        fastapi.applications.FastAPI: get_fastapi_specs
-    }.get(type(app), unsupported_app_type)(app)
+        'Flask': _get_flask_specs,
+        'FastAPI': _get_fastapi_specs
+    }.get(app.__class__.__name__, _unsupported_app_type)(app)
 
 
 def _create_template_from_app(app, template_output):
     logging.info("Generating OpenAPI template from Flask swagger specs")
-    openapi_schema = get_swagger_specs(app)
-    clean_dict(openapi_schema)
-    write_yaml_file(template_output, openapi_schema)
+    configs = get_dict_with_defaults()
+    dict_merge(configs, _get_swagger_specs(app))
+    clean_dict(configs)
+    write_yaml_file(template_output, configs)

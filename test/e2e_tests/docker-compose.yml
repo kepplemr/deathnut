@@ -13,9 +13,7 @@ services:
       - "80:80"
     volumes:
       - ./recipe-service:/recipe-service
-      - ./keys:/keys
       - ../../deathnut:/deathnut
-      - ./deploy:/recipe-service/deploy
     links:
       - "redis"
     command:
@@ -29,9 +27,7 @@ services:
       - "81:80"
     volumes:
       - ./recipe-service:/recipe-service
-      - ./keys:/keys
       - ../../deathnut:/deathnut
-      - ./deploy:/recipe-service/deploy
     links:
       - "redis"
     command:
@@ -45,15 +41,12 @@ services:
       - "82:80"
     volumes:
       - ./recipe-service:/recipe-service
-      - ./keys:/keys
       - ../../deathnut:/deathnut
-      - ./deploy:/recipe-service/deploy
     links:
       - "redis"
     command:
       ["python" , "/recipe-service/fastapi/app.py", "--generate-openapi-template",
-      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/fastapi.yaml"]      
-      #["uvicorn", "--port", "80", "--host", "0.0.0.0", "recipe-service.fastapi.app:app"] 
+      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/fastapi.yaml"]       
   recipe-service-falcon:
     build: .
     image: recipe-service
@@ -74,7 +67,7 @@ services:
     ports:
       - "8080:8080"
     volumes:
-      - ./keys:/keys
+      - ./recipe-service/keys:/keys
     command: ["--service=recipe-service-apispec.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed",
     "--backend=recipe-service-apispec:80", "--http_port=8080", "--service_account_key=/keys/jwt-test.json"]
   esp-restplus:
@@ -83,7 +76,7 @@ services:
     ports:
       - "8081:8081"
     volumes:
-      - ./keys:/keys
+      - ./recipe-service/keys:/keys
     command: ["--service=recipe-service-restplus.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed",
     "--backend=recipe-service-restplus:80", "--http_port=8081", "--service_account_key=/keys/jwt-test.json"]
   esp-falcon:
@@ -92,13 +85,13 @@ services:
     ports:
       - "8082:8082"
     volumes:
-      - ./keys:/keys
+      - ./recipe-service/keys:/keys
     command: ["--service=recipe-service-falcon.endpoints.wellio-dev-michael.cloud.goog", "--rollout_strategy=managed",
     "--backend=recipe-service-falcon:80", "--http_port=8083", "--service_account_key=/keys/jwt-test.json"]
   api-converter:
     image: ioggstream/api-spec-converter
     container_name: converter
     volumes:
-      - ./deploy/openapi/generated:/tmp
+      - ./recipe-service/deploy/openapi/generated:/tmp
     command: ["--from", "openapi_3", "--to", "swagger_2", "-d", "--syntax", "yaml", "--order",
       "alpha", "--check", "/tmp/fastapi.yaml"]
