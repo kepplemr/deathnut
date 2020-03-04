@@ -12,7 +12,8 @@ import google.auth.jwt
 import requests
 
 E2E_DIR = os.path.dirname(os.path.realpath(__file__))
-RECIPE_CONTAINERS = ['recipe-service-apispec', 'recipe-service-restplus', 'recipe-service-fastapi', 'recipe-service-falcon']
+RECIPE_CONTAINERS = ['recipe-service-apispec', 'recipe-service-restplus', 'recipe-service-fastapi',
+                     'recipe-service-falcon']
 ESP_CONTAINERS = ['esp-apispec', 'esp-restplus', 'esp-falcon']
 OTHER_CONTAINERS = ['converter']
 SERVICE_CONTAINERS = RECIPE_CONTAINERS + ESP_CONTAINERS + ['redis']
@@ -151,75 +152,70 @@ def remove_output():
         os.remove(to_nuke)
 
 
-def generate_and_deploy_openapi_spec():
-    for container in RECIPE_CONTAINERS:
-        tag = container.split('-')[-1]
-        if tag == 'fastapi' and sys.version_info < (3, 0):
-            print('fastapi requires python 3')
-            continue
-        if tag == 'falcon':
-            print("Falcon ain't dont yet")
-            continue
-        # no need to be inside container
-        os.chdir('/'.join([E2E_DIR, 'recipe-service']))
-        generate_cmd = ['python',
-            'generate_openapi/generate_configs.py', '-b',
-            'deploy/openapi/generated/{}.yaml'.format(tag), '-o',
-            'deploy/openapi/overrides/{}.yaml'.format(tag), '-p',
-            'deploy/openapi/output']
-        deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
-            'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
-        subprocess.check_call(generate_cmd)
-        subprocess.check_call(deploy_cmd)
-        try:
-            assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag),
-                'deploy/openapi/expected/{}.yaml'.format(tag))            
-        except AssertionError as ae:
-            print('Output -> ' + open('deploy/openapi/output/{}.yaml'.format(tag), 'r').read())
-            print('Expected -> ' + open('deploy/openapi/expected/{}.yaml'.format(tag), 'r').read())
-            raise ae
-            
-
-def compose_up():
-    compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache']
-    # subprocess.check_output(compose_build_cmd)
-    for container in SERVICE_CONTAINERS:
-        run_container(container)
+def generate_and_deploy_openapi_spec(tag):
+    if tag == 'fastapi' and sys.version_info < (3, 0):
+        print('fastapi requires python 3')
+        return
+    if tag == 'falcon':
+        print("Falcon ain't dont yet")
+        return
+    os.chdir('/'.join([E2E_DIR, 'recipe-service']))
+    generate_cmd = ['python',
+        'generate_openapi/generate_configs.py', '-b',
+        'deploy/openapi/generated/{}.yaml'.format(tag), '-o',
+        'deploy/openapi/overrides/{}.yaml'.format(tag), '-p',
+        'deploy/openapi/output']
+    deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
+        'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
+    subprocess.check_call(generate_cmd)
+    subprocess.check_call(deploy_cmd)
+    try:
+        assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag),
+            'deploy/openapi/expected/{}.yaml'.format(tag))            
+    except AssertionError as ae:
+        print('Output -> ' + open('deploy/openapi/output/{}.yaml'.format(tag), 'r').read())
+        print('Expected -> ' + open('deploy/openapi/expected/{}.yaml'.format(tag), 'r').read())
+        raise ae
 
 
-def run_container(container):
-    compose_up_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'up', '-d', container]
-    subprocess.check_output(compose_up_cmd)
+def build_and_run_container(container, tag):
+    compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache', container]
+    subprocess.check_output(compose_build_cmd)
+    for cont in [container, 'esp-{}'.format(tag)]:
+        compose_up_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'up', '-d', cont]
+        subprocess.check_output(compose_up_cmd)
 
 
-def on_exit():
-    #remove_output()
-    for container in ALL_CONTAINERS:
+def stop_and_remove_container(*containers):
+    for container in containers:
         stop_cmd = ['docker', 'stop', container]
         rm_cmd = ['docker', 'rm', container]
-        subprocess.call(stop_cmd)
-        subprocess.call(rm_cmd)
+        subprocess.call(stop_cmd, stderr=subprocess.DEVNULL)
+        subprocess.call(rm_cmd, stderr=subprocess.DEVNULL)
 
 
-def test_main():
-    #atexit.register(on_exit)
-    compose_up()
-    # wait for docker-compose
-    time.sleep(10)
-    generate_and_deploy_openapi_spec()
-    # 80 = ApiSpec
-    # 81 = Restplus
-    # 82 = Fastapi
-    # 83 = Falcon
-    for port in [80, 81, 83]:
-        print('Testing unsecured requests on port: ' + str(port))
-        #unsecured_requests(port)
-    # for port in [8080, 8081, 8082]:
-    for port in [8080, 8081]:
-        print('Testing secured requests on port: ' + str(port))
-        #secured_requests(port)
-        #deathnut_basics(port)
+def test_apispec_e2e():
+    run_e2e_suite('recipe-service-apispec', 80, 8080)
 
 
+def test_restplus_e2e():
+    run_e2e_suite('recipe-service-restplus', 81, 8081)
+
+
+def test_fastapi_e2e():
+    pass
+
+
+def run_e2e_suite(container, unsecured_port, secured_port):
+    print('Testing: ' + container)
+    tag = container.split('-')[-1]
+    build_and_run_container(container, tag)
+    generate_and_deploy_openapi_spec(tag)
+    unsecured_requests(unsecured_port)
+    secured_requests(secured_port)
+    deathnut_basics(secured_port)
+    stop_and_remove_container(container, 'esp-{}'.format(tag))
+
+atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":
-    test_main()
+    pass
