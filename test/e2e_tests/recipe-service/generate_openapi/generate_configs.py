@@ -25,7 +25,6 @@ def convert_oas3_to_swagger2(filename):
     dict
         dictionary containing converted OAS3 -> swagger2 specs
     """
-    print('Base filename -> ' + filename)
     template_loc = os.path.split('/'.join([os.getcwd(), filename]))
     run_converter_cmd = ['/usr/bin/docker', 'run', '-v', '{}:/tmp'.format(template_loc[0]),'--name', 
         'converter', 'ioggstream/api-spec-converter', '--from', 'openapi_3', '--to', 'swagger_2',
