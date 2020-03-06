@@ -87,7 +87,7 @@ class BaseAuthorizationInterface(ABC):
         return decorator
 
     def _change_roles(self, action, roles, resource_id, **kwargs):
-        if "deathnut_calling_user" not in kwargs:
+        if not kwargs.get('deathnut_calling_user'):
             logger.warn("Unauthenticated user attempt to update roles")
             return
         user = kwargs.get("deathnut_user", "")
@@ -118,10 +118,6 @@ class BaseAuthorizationInterface(ABC):
     def _is_authenticated(self, user):
         return user != "Unauthenticated"
 
-    def _deathnut_checks_successful(self, dn_user, dn_func, *args, **kwargs):
-        """adds deathnut_calling_user to kwargs"""
-        kwargs.update(deathnut_calling_user=dn_user, deathnut_user=dn_user)
-        return dn_func(*args, **kwargs)
 
     def _execute_if_authorized(self, dn_user, dn_role, dn_rid, dn_enabled, dn_strict, dn_dont_wait,
         dn_func, *args, **kwargs):
@@ -147,17 +143,23 @@ class BaseAuthorizationInterface(ABC):
             The wrapped function.
         """
         if not self._is_auth_required(dn_user, dn_enabled, dn_strict):
-            return dn_func(*args, **kwargs)
+            return self._execute(dn_func, *args, **kwargs)
         if dn_dont_wait:
-            return self.execute_asynchronously(dn_func, dn_user, dn_role, dn_rid, args, kwargs)
+            return self._execute_asynchronously(dn_func, dn_user, dn_role, dn_rid, *args, **kwargs)
         if self._is_authorized(dn_user, dn_role, dn_rid):
-            return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
+            return self._execute(dn_func, *args, deathnut_calling_user=dn_user,
+                                 deathnut_user=dn_user, **kwargs)
         raise DeathnutException("Not authorized")
 
 
-    def execute_asynchronously(self, dn_func, dn_user, dn_role, dn_rid, *args, **kwargs):
+    @staticmethod
+    def _execute(dn_func, *args, **kwargs):
+        return dn_func(*args, **kwargs)
+
+
+    def _execute_asynchronously(self, dn_func, dn_user, dn_role, dn_rid, *args, **kwargs):
         with ThreadPoolExecutor() as ex:
-            # TODO what if assign used within here on GET
+            # assigns should not occur on GET / will not succeed as we dont pass user info
             fetched_result = ex.submit(dn_func, *args, **kwargs)
             is_authorized = ex.submit(self._is_authorized, dn_user, dn_role, dn_rid)
             if is_authorized.result():
@@ -185,7 +187,8 @@ class BaseAuthorizationInterface(ABC):
             The wrapped function.
         """
         if not self._is_auth_required(dn_user, dn_enabled, dn_strict):
-            return dn_func(*args, **kwargs)
+            return self._execute(dn_func, *args, **kwargs)
         if self._is_authenticated(dn_user):
-            return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
+            return self._execute(dn_func, *args, deathnut_calling_user=dn_user,
+                                 deathnut_user=dn_user, **kwargs)
         raise DeathnutException("No authentication provided")

@@ -13,35 +13,47 @@ class FastapiAuthorization(BaseAuthorizationInterface):
     def __init__(self, app, service, resource_type=None, strict=True, enabled=True, **kwargs):
         super(FastapiAuthorization, self).__init__(service, resource_type, strict, enabled, **kwargs)
         self._app = app
-        self.register_middleware()
+        #self.register_middleware()
 
 
-    def _deathnut_checks_successful(self, dn_user, dn_func, request, *args, **kwargs):
-        request.deathnut_calling_user = dn_user
-        request.deathnut_user = dn_user
+    @staticmethod
+    def _execute(dn_func, request, *args, **kwargs):
+        request.deathnut_calling_user = kwargs.get('deathnut_calling_user')
+        request.deathnut_user = kwargs.get('deathnut_user')
         return asyncio.run(dn_func(*args, request=request, **kwargs))
 
     
     @staticmethod
     def get_auth_header(request, *args, **kwargs):
         return request.headers.get('X-Endpoint-Api-Userinfo', '')
-    
-    def register_middleware(self):
-        @self._app.middleware("http")
-        async def add_process_time_header(request: Request, call_next):
-            # logger.info('Hey here')
-            # logger.info('Request -> ' + str(request))
-            logger.info('Request dir -> ' + str(dir(request)))
-            # logger.info('Request headers -> ' + str(request.headers))
-            response = await call_next(request)
-            #response.headers["X-Process-Time"] = str(process_time)
-            return response
 
 
     @staticmethod
+    # TODO do we need to consider body here?
     def get_resource_id(id_identifier, request, *args, **kwargs):
         return request.path_params[id_identifier]
 
+
+    def _execute_asynchronously(self, dn_func, dn_user, dn_role, dn_rid, *args, **kwargs):
+        loop = asyncio.get_event_loop()
+        results = loop.run_until_complete(asyncio.gather(loop.run_in_executor(None,
+                                          self._is_authorized(dn_user, dn_role, dn_rid), 
+                                          dn_func(*args, **kwargs))))
+        if results[0]:
+            return results[1]
+        raise DeathnutException("Not authorized")
+
+
+    # def register_middleware(self):
+    #     @self._app.middleware("http")
+    #     async def add_process_time_header(request: Request, call_next):
+    #         # logger.info('Hey here')
+    #         # logger.info('Request -> ' + str(request))
+    #         logger.info('Request dir -> ' + str(dir(request)))
+    #         # logger.info('Request headers -> ' + str(request.headers))
+    #         response = await call_next(request)
+    #         #response.headers["X-Process-Time"] = str(process_time)
+    #         return response
 
     @staticmethod
     def get_dont_wait(request, *args, **kwargs):

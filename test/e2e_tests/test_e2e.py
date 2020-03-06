@@ -212,8 +212,7 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     tag = container.split('-')[-1]
     build_and_run_container(container, tag)
     #generate_and_deploy_openapi_spec(tag)
-
-    unsecured_requests(unsecured_port)
+    #unsecured_requests(unsecured_port)
     secured_requests(secured_port)
     #deathnut_basics(secured_port)
     #stop_and_remove_container(container, 'esp-{}'.format(tag))
