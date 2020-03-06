@@ -149,16 +149,21 @@ class BaseAuthorizationInterface(ABC):
         if not self._is_auth_required(dn_user, dn_enabled, dn_strict):
             return dn_func(*args, **kwargs)
         if dn_dont_wait:
-            with ThreadPoolExecutor() as ex:
-                # TODO what if assign used within here on GET
-                fetched_result = ex.submit(dn_func, *args, **kwargs)
-                is_authorized = ex.submit(self._is_authorized, dn_user, dn_role, dn_rid)
-                if is_authorized.result():
-                    return fetched_result.result()
-                raise DeathnutException("Not authorized")
+            return self.execute_asynchronously(dn_func, dn_user, dn_role, dn_rid, args, kwargs)
         if self._is_authorized(dn_user, dn_role, dn_rid):
             return self._deathnut_checks_successful(dn_user, dn_func, *args, **kwargs)
         raise DeathnutException("Not authorized")
+
+
+    def execute_asynchronously(self, dn_func, dn_user, dn_role, dn_rid, *args, **kwargs):
+        with ThreadPoolExecutor() as ex:
+            # TODO what if assign used within here on GET
+            fetched_result = ex.submit(dn_func, *args, **kwargs)
+            is_authorized = ex.submit(self._is_authorized, dn_user, dn_role, dn_rid)
+            if is_authorized.result():
+                return fetched_result.result()
+            raise DeathnutException("Not authorized")
+
 
     def _execute_if_authenticated(self, dn_user, dn_enabled, dn_strict, dn_func, *args, **kwargs):
         """
