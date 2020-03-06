@@ -13,20 +13,20 @@ app = FastAPI()
 redis_conn = redis.Redis(host="redis", port=6379)
 auth_o = FastapiAuthorization(app, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
+auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
+auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit'])
+auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 logger = get_deathnut_logger(__name__)
 recipe_db = dict()
 
 @app.get("/recipe/{id}", response_model=RecipeWithId)
 @auth_o.requires_role('view')
-async def root(id: str, request: Request):
-    print('Request get dir -> ' + str(dir(request)))
-    print('Reqiest path params -> ' + str(request.path_params))
+async def post_recipe(id: str, request: Request):
     return recipe_db[id]
 
 @app.post("/recipe", response_model=RecipeWithId)
 @auth_o.authentication_required()
 async def create_recipe(recipe: Recipe, request: Request):
-    print('Request body -> ' + str(request.body()))
     new_id = str(uuid.uuid4())
     new_recipe = {"id": new_id, "title": recipe.title, "ingredients": recipe.ingredients}
     recipe_db[new_id] = new_recipe
@@ -34,7 +34,8 @@ async def create_recipe(recipe: Recipe, request: Request):
     return new_recipe
 
 @app.patch("/recipe/{id}", response_model=RecipeWithId)
-async def patch_recipe(id: str, recipe: PartialRecipe):
+@auth_o.requires_role('edit')
+async def patch_recipe(id: str, recipe: PartialRecipe, request: Request):
     for update in [x for x in recipe.dict().keys() if recipe.dict()[x]]:
         recipe_db[id][update] = getattr(recipe, update)
     return recipe_db[id]
@@ -46,6 +47,3 @@ def get_app():
 if __name__ == "__main__":
     app = get_app()
     uvicorn.run("recipe-service.fastapi.app:app", debug=True, port=80, host="0.0.0.0")
-
-#generate_template_from_app(app, template_output="deploy/openapi/generated/fastapi.yaml", force_run=True)
-

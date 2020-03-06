@@ -1,4 +1,31 @@
 definitions:
+  DeathnutAuthSchema:
+    properties:
+      grants:
+        items:
+          type: string
+        title: Grants
+        type: array
+      id:
+        title: Id
+        type: string
+      requires:
+        title: Requires
+        type: string
+      revoke:
+        title: Revoke
+        type: boolean
+      user:
+        title: User
+        type: string
+    required:
+    - id
+    - user
+    - requires
+    - grants
+    - revoke
+    title: DeathnutAuthSchema
+    type: object
   HTTPValidationError:
     properties:
       detail:
@@ -79,6 +106,29 @@ info:
   title: Recipe Service (FastApi)
   version: 0.1.0
 paths:
+  /auth-recipe:
+    post:
+      consumes:
+      - application/json
+      operationId: auth_auth_recipe_post
+      parameters:
+      - in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/DeathnutAuthSchema'
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: Successful Response
+          schema:
+            $ref: '#/definitions/DeathnutAuthSchema'
+        '422':
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/HTTPValidationError'
+      summary: Auth
   /recipe:
     post:
       consumes:
@@ -104,7 +154,7 @@ paths:
       summary: Create Recipe
   /recipe/{id}:
     get:
-      operationId: root_recipe__id__get
+      operationId: post_recipe_recipe__id__get
       parameters:
       - in: path
         name: id
@@ -121,7 +171,7 @@ paths:
           description: Validation Error
           schema:
             $ref: '#/definitions/HTTPValidationError'
-      summary: Root
+      summary: Post Recipe
     patch:
       consumes:
       - application/json

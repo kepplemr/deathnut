@@ -76,9 +76,8 @@ def secured_requests(port):
     jwt = generate_jwt("michael")
     new_recipe = {"title": "Michael spaghetti", "ingredients": ["Pasta", "Sour Cream"]}
     new_update = {"ingredients": ["Pasta", "Tomato Sauce"]}
-    #spaghetti_recipe = make_jwt_request(requests.post, "http://localhost:{}/recipe".format(port), jwt, new_recipe)
-    #spaghetti_id = json.loads(spaghetti_recipe.text)["id"]
-    spaghetti_id = 'asdasd'
+    spaghetti_recipe = make_jwt_request(requests.post, "http://localhost:{}/recipe".format(port), jwt, new_recipe)
+    spaghetti_id = json.loads(spaghetti_recipe.text)["id"]
     make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, spaghetti_id), jwt, new_update)
     recipe = json.loads(make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, spaghetti_id), jwt).text)
     assert recipe["title"] == "Michael spaghetti"
@@ -169,13 +168,13 @@ def generate_and_deploy_openapi_spec(tag):
         'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
     subprocess.check_call(generate_cmd)
     subprocess.check_call(deploy_cmd)
-    # try:
-    #     assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag),
-    #         'deploy/openapi/expected/{}.yaml'.format(tag))            
-    # except AssertionError as ae:
-    #     print('Output -> ' + open('deploy/openapi/output/{}.yaml'.format(tag), 'r').read())
-    #     print('Expected -> ' + open('deploy/openapi/expected/{}.yaml'.format(tag), 'r').read())
-    #     raise ae
+    try:
+        assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag),
+            'deploy/openapi/expected/{}.yaml'.format(tag))            
+    except AssertionError as ae:
+        print('Output -> ' + open('deploy/openapi/output/{}.yaml'.format(tag), 'r').read())
+        print('Expected -> ' + open('deploy/openapi/expected/{}.yaml'.format(tag), 'r').read())
+        raise ae
 
 
 def build_and_run_container(container, tag):
@@ -212,12 +211,12 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     tag = container.split('-')[-1]
     build_and_run_container(container, tag)
     #generate_and_deploy_openapi_spec(tag)
-    #unsecured_requests(unsecured_port)
+    time.sleep(8)
+    unsecured_requests(unsecured_port)
     secured_requests(secured_port)
-    #deathnut_basics(secured_port)
+    deathnut_basics(secured_port)
     #stop_and_remove_container(container, 'esp-{}'.format(tag))
 
 #atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":
-    test_apispec_e2e()
-    #test_fastapi_e2e()
+    test_fastapi_e2e()
