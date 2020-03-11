@@ -32,7 +32,7 @@ services:
       - "redis"
     command:
       ["python" , "/recipe-service/flask/app-restplus.py", "--generate-openapi-template",
-      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/restplus.yaml"] 
+      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/restplus.yaml"]
   recipe-service-fastapi:
     build: .
     image: recipe-service
@@ -46,7 +46,7 @@ services:
       - "redis"
     command:
       ["python" , "/recipe-service/fastapi/app.py", "--generate-openapi-template",
-      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/fastapi.yaml"]       
+      "--openapi-template-output", "/recipe-service/deploy/openapi/generated/fastapi.yaml"]
   recipe-service-falcon:
     build: .
     image: recipe-service
@@ -60,7 +60,7 @@ services:
     links:
       - "redis"
     command:
-      ["python" , "/recipe-service/falcon/app.py", "--generate-openapi-template"] 
+      ["python" , "/recipe-service/falcon/app.py", "--generate-openapi-template"]
   esp-apispec:
     image: gcr.io/endpoints-release/endpoints-runtime:1
     container_name: esp-apispec

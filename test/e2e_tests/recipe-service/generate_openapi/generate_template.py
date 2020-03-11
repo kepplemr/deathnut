@@ -7,7 +7,8 @@ import json
 import logging
 import sys
 
-from util import clean_dict, write_yaml_file, get_dict_with_defaults, dict_merge
+from util import (clean_dict, dict_merge, get_dict_with_defaults,
+                  write_yaml_file)
 
 DEFAULT_FILE_LOCATION = "deploy/openapi/openapi.generated.yaml"
 
@@ -76,13 +77,13 @@ def _handle_arg_parsing():
 
 def _get_flask_specs(app):
     """
-    Function to return swagger doc dict for flask apps (apispec and restplus). Determines swagger 
+    Function to return swagger doc dict for flask apps (apispec and restplus). Determines swagger
     location, starts a test app, and returns the pulled docs.
 
     Parameters
     ----------
     app : flask.app.Flask
-    
+
     Returns
     -------
     dict : swagger dict
@@ -107,7 +108,7 @@ def _get_fastapi_specs(app):
     ----------
     app : fastapi.applications.FastAPI
         FastAPI application
-    
+
     Returns
     -------
     dict

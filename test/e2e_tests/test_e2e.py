@@ -1,11 +1,10 @@
-import atexit
 import filecmp
 import glob
 import json
 import os
 import subprocess
-import time
 import sys
+import time
 
 import google.auth.crypt
 import google.auth.jwt
@@ -170,7 +169,7 @@ def generate_and_deploy_openapi_spec(tag):
     subprocess.check_call(deploy_cmd)
     try:
         assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag),
-            'deploy/openapi/expected/{}.yaml'.format(tag))            
+            'deploy/openapi/expected/{}.yaml'.format(tag))
     except AssertionError as ae:
         print('Output -> ' + open('deploy/openapi/output/{}.yaml'.format(tag), 'r').read())
         print('Expected -> ' + open('deploy/openapi/expected/{}.yaml'.format(tag), 'r').read())
@@ -178,7 +177,7 @@ def generate_and_deploy_openapi_spec(tag):
 
 
 def build_and_run_container(container, tag):
-    compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache', container]
+    ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache', container]
     #subprocess.check_output(compose_build_cmd)
     for cont in [container, 'esp-{}'.format(tag)]:
         compose_up_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'up', '-d', cont]
