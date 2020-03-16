@@ -17,8 +17,8 @@ jobs:
           name: pre-commit run
           command: pre-commit run -a
   test:
-    docker:
-      - image: python:3.7.6
+    machine:
+      image: ubuntu-1604:201903-01
     steps:
       - checkout
       - run:
