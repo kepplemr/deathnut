@@ -21,9 +21,13 @@ jobs:
       image: ubuntu-1604:201903-01
     steps:
       - checkout
+      - install:
+          version: 268.0.0
+      - initialize
       - run:
           name: Install tox
           command: |
+            gcloud docker -a
             pip install -U pip
             pip install --user tox
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
