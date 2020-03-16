@@ -1,16 +1,14 @@
-from fastapi import FastAPI, Header
-from starlette.responses import JSONResponse
-from starlette.requests import Request
-
 import asyncio
 import functools
 
-from deathnut.schema.pydantic.dn_schemas_pydantic import DeathnutAuthSchema, DeathnutErrorSchema
-from deathnut.interface.base_interface import BaseAuthorizationInterface
-from deathnut.util.deathnut_exception import DeathnutException
-from deathnut.util.logger import get_deathnut_logger
 from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
+from deathnut.interface.base_interface import BaseAuthorizationInterface
+from deathnut.schema.pydantic.dn_schemas_pydantic import DeathnutAuthSchema
+from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.jwt import get_user_from_jwt_header
+from deathnut.util.logger import get_deathnut_logger
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
 logger = get_deathnut_logger(__name__)
 
@@ -30,7 +28,7 @@ class FastapiAuthorization(BaseAuthorizationInterface):
         request.deathnut_calling_user = kwargs.pop('deathnut_calling_user', None)
         request.deathnut_user = kwargs.pop('deathnut_user', None)
         return asyncio.run(dn_func(*args, request=request, **kwargs))
-    
+
     @staticmethod
     def get_auth_header(request, *args, **kwargs):
         return request.headers.get('X-Endpoint-Api-Userinfo', '')
@@ -52,19 +50,19 @@ class FastapiAuthorization(BaseAuthorizationInterface):
 
     @staticmethod
     def get_dont_wait(request, *args, **kwargs):
-        dont_wait = kwargs.get('dont_wait', None)
+        kwargs.get('dont_wait', None)
         return kwargs.get("dont_wait", request.method == "GET")
 
     def assign_roles(self, resource_id, roles, **kwargs):
         dn_calling_user = kwargs.get('deathnut_calling_user', kwargs['request'].deathnut_calling_user)
         dn_user = kwargs.get('deathnut_user', kwargs['request'].deathnut_user)
-        return super(FastapiAuthorization, self)._change_roles(self._client.assign_role, roles, resource_id, 
+        return super(FastapiAuthorization, self)._change_roles(self._client.assign_role, roles, resource_id,
             deathnut_calling_user=dn_calling_user, deathnut_user=dn_user)
 
     def revoke_roles(self, resource_id, roles, **kwargs):
         dn_calling_user = kwargs.get('deathnut_calling_user', kwargs['request'].deathnut_calling_user)
         dn_user = kwargs.get('deathnut_user', kwargs['request'].deathnut_user)
-        return super(FastapiAuthorization, self)._change_roles(self._client.revoke_role, roles, resource_id, 
+        return super(FastapiAuthorization, self)._change_roles(self._client.revoke_role, roles, resource_id,
             deathnut_calling_user=dn_calling_user, deathnut_user=dn_user)
 
     def create_auth_endpoint(self, name):
@@ -78,7 +76,7 @@ class FastapiAuthorization(BaseAuthorizationInterface):
             name of the endpoint to create, ex: '/auth-recipe'
         """
         return FastapiAuthEndpoint(self, self._app, name)
-    
+
 
 class FastapiAuthEndpoint(BaseAuthEndpoint):
     def __init__(self, auth_o, app, name):

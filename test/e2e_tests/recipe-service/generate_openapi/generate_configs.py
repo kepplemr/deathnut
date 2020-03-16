@@ -7,8 +7,7 @@ import os
 import subprocess
 
 import yaml
-
-from util import clean_dict, write_yaml_file, dict_merge, load_yaml_file
+from util import clean_dict, dict_merge, load_yaml_file, write_yaml_file
 
 
 def convert_oas3_to_swagger2(filename):
@@ -19,14 +18,14 @@ def convert_oas3_to_swagger2(filename):
     ----------
     filename : str
         path to OAS3-formatted file
-    
+
     Returns
     -------
     dict
         dictionary containing converted OAS3 -> swagger2 specs
     """
     template_loc = os.path.split('/'.join([os.getcwd(), filename]))
-    run_converter_cmd = ['/usr/bin/docker', 'run', '-v', '{}:/tmp'.format(template_loc[0]),'--name', 
+    run_converter_cmd = ['/usr/bin/docker', 'run', '-v', '{}:/tmp'.format(template_loc[0]),'--name',
         'converter', 'ioggstream/api-spec-converter', '--from', 'openapi_3', '--to', 'swagger_2',
         '-d', '--syntax', 'yaml', '--order', 'alpha', '/tmp/{}'.format(template_loc[1])]
     subprocess.check_call(run_converter_cmd)
@@ -39,7 +38,7 @@ def generate_yaml_confs(base_template_filename, overrides_filename, path_prefix=
                         merge_lists=False):
     """
     This function recursively merges two dictionaries.
-    
+
     Parameters
     ----------
     base_template_filename: str
@@ -53,7 +52,7 @@ def generate_yaml_confs(base_template_filename, overrides_filename, path_prefix=
     merge_lists : bool
         If True, keys with list values will be combined together, If False (default), the override
         list will completely replace the original.
-    
+
     Notes
     -----
     OAS3 -> swagger2 strips unrecognized root elements, notably GCP securityDefinitions. We could

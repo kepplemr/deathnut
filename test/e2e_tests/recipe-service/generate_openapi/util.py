@@ -1,5 +1,6 @@
 import logging
 import os
+
 import yaml
 
 # support python2 & 3
@@ -46,7 +47,7 @@ def load_yaml_file(filename):
     Parameters
     ----------
     filename : str
-    
+
     Returns
     -------
     dict

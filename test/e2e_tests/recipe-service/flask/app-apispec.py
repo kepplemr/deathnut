@@ -3,7 +3,7 @@ import uuid
 import redis
 from deathnut.interface.flask.flask_apispec import FlaskAPISpecAuthorization
 from deathnut.util.logger import get_deathnut_logger
-from flask import Flask, jsonify
+from flask import Flask
 from flask_apispec import marshal_with, use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from generate_openapi.generate_template import generate_openapi_template

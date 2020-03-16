@@ -1,11 +1,10 @@
-import atexit
 import filecmp
 import glob
 import json
 import os
 import subprocess
-import time
 import sys
+import time
 
 import google.auth.crypt
 import google.auth.jwt
@@ -168,7 +167,7 @@ def generate_and_deploy_openapi_spec(tag):
     subprocess.check_call(deploy_cmd)
     try:
         assert filecmp.cmp('deploy/openapi/output/{}.yaml'.format(tag),
-            'deploy/openapi/expected/{}.yaml'.format(tag))            
+            'deploy/openapi/expected/{}.yaml'.format(tag))
     except AssertionError as ae:
         print('Output -> ' + open('deploy/openapi/output/{}.yaml'.format(tag), 'r').read())
         print('Expected -> ' + open('deploy/openapi/expected/{}.yaml'.format(tag), 'r').read())
@@ -201,7 +200,6 @@ def test_restplus_e2e():
 
 def test_fastapi_e2e():
     run_e2e_suite('recipe-service-fastapi', 82, 8082)
-    #pass
 
 
 def run_e2e_suite(container, unsecured_port, secured_port):
@@ -217,4 +215,6 @@ def run_e2e_suite(container, unsecured_port, secured_port):
 
 atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":
+    test_apispec_e2e()
+    test_restplus_e2e()
     test_fastapi_e2e()

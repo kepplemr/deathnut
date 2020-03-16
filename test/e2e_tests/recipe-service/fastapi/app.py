@@ -1,13 +1,13 @@
-import redis
 import uuid
-import uvicorn
-from fastapi import FastAPI
-from starlette.requests import Request
 
+import redis
+import uvicorn
 from deathnut.interface.fastapi.fastapi_auth import FastapiAuthorization
 from deathnut.util.logger import get_deathnut_logger
-from schema.app_schemas import Recipe, RecipeWithId, PartialRecipe
+from fastapi import FastAPI
 from generate_openapi.generate_template import generate_openapi_template
+from schema.app_schemas import PartialRecipe, Recipe, RecipeWithId
+from starlette.requests import Request
 
 app = FastAPI()
 redis_conn = redis.Redis(host="redis", port=6379)
