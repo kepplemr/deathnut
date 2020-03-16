@@ -1,3 +1,4 @@
+import atexit
 import filecmp
 import glob
 import json
