@@ -141,8 +141,6 @@ def deathnut_basics(port):
     auth_grant = {"id": pierogi_id, "requires": "edit", "grants": ["view"], "user": "jennifer", "revoke": True}
     response = make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), kim_jwt, auth_grant)
     assert response.status_code == 200
-    # TEST XFIELDS
-    make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt, extra_header={'X-Fields': 'ingredients'})
 
 
 def remove_output():
@@ -156,7 +154,7 @@ def generate_and_deploy_openapi_spec(tag):
         print('fastapi requires python 3')
         return
     if tag == 'falcon':
-        print("Falcon ain't dont yet")
+        print("Falcon openapi generation not supported")
         return
     os.chdir('/'.join([E2E_DIR, 'recipe-service']))
     generate_cmd = ['python',
@@ -179,7 +177,7 @@ def generate_and_deploy_openapi_spec(tag):
 
 def build_and_run_container(container, tag):
     compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache', container]
-    #subprocess.check_output(compose_build_cmd)
+    subprocess.check_output(compose_build_cmd)
     for cont in [container, 'esp-{}'.format(tag)]:
         compose_up_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'up', '-d', cont]
         subprocess.check_output(compose_up_cmd)
@@ -210,13 +208,13 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     print('Testing: ' + container)
     tag = container.split('-')[-1]
     build_and_run_container(container, tag)
-    #generate_and_deploy_openapi_spec(tag)
+    generate_and_deploy_openapi_spec(tag)
     time.sleep(8)
     unsecured_requests(unsecured_port)
     secured_requests(secured_port)
     deathnut_basics(secured_port)
-    #stop_and_remove_container(container, 'esp-{}'.format(tag))
+    stop_and_remove_container(container, 'esp-{}'.format(tag))
 
-#atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
+atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":
     test_fastapi_e2e()

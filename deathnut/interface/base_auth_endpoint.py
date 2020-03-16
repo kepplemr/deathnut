@@ -15,7 +15,7 @@ class BaseAuthEndpoint(ABC):
 
     def _check_grant_enabled(self, requires, grants):
         logger.warn("Required: {} grants: {}".format(requires, grants))
-        if grants not in self._allowed[requires]:
+        if grants not in self._allowed.get(requires):
             raise DeathnutException('Role {} is not authorized to grant role {}'.format(requires, grants))
 
     def allow_grant(self, requires_role, grants_roles):
