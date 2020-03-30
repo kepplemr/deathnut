@@ -25,8 +25,8 @@ class FastapiAuthorization(BaseAuthorizationInterface):
 
     @staticmethod
     def _execute(dn_func, request, *args, **kwargs):
-        request.deathnut_calling_user = kwargs.pop('deathnut_calling_user', None)
-        request.deathnut_user = kwargs.pop('deathnut_user', None)
+        request.deathnut_calling_user = kwargs.pop('deathnut_calling_user', 'Unauthenticated')
+        request.deathnut_user = kwargs.pop('deathnut_user', 'Unauthenticated')
         return asyncio.run(dn_func(*args, request=request, **kwargs))
 
     @staticmethod
@@ -38,12 +38,15 @@ class FastapiAuthorization(BaseAuthorizationInterface):
     def get_resource_id(id_identifier, request, *args, **kwargs):
         return request.path_params[id_identifier]
 
-    def _execute_asynchronously(self, dn_func, dn_user, dn_role, dn_rid, *args, **kwargs):
+    def _execute_asynchronously(self, dn_func, dn_role, dn_rid, request, *args, **kwargs):
         loop = asyncio.new_event_loop()
+        request.deathnut_calling_user = kwargs.pop('deathnut_calling_user', 'Unauthenticated')
+        request.deathnut_user = kwargs.pop('deathnut_user', 'Unauthenticated')
         asyncio.set_event_loop(loop)
         results = loop.run_until_complete(asyncio.gather(loop.run_in_executor(None,
-                                          functools.partial(self._is_authorized, dn_user, dn_role, dn_rid)),
-                                          dn_func(*args, **kwargs)))
+                                          functools.partial(self._is_authorized, 
+                                          request.deathnut_calling_user, dn_role, dn_rid)), 
+                                          dn_func(*args, request=request, **kwargs)))
         if results[0]:
             return results[1]
         raise DeathnutException("Not authorized")
