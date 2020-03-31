@@ -1,4 +1,4 @@
-FROM gcr.io/firebase-wellio/charger-apispec-py3.7:latest
+FROM gcr.io/wellio-dev-michael/charger-apispec-py3.7:latest
 LABEL maintainer="mkepple@getwellio.com"
 LABEL description="Example Recipe app"
 
