@@ -11,6 +11,7 @@ references:
       command: |
         cd $(pyenv root)
         git pull
+        pyenv local 3.7.0
 jobs:
   style-check:
     docker:
