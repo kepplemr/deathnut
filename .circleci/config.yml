@@ -8,8 +8,11 @@ references:
   dump_test_key: &dump_test_key
     run:
       name: Dump keys
-      command: |
-        echo ${GCLOUD_TEST_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
+      command: echo ${GCLOUD_SERVICE_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
+  set_deploy_key: &set_deploy_key
+    run:
+      name: Set deploy key
+      command: GCLOUD_SERVICE_KEY=$GCLOUD_DEPLOY_KEY
 jobs:
   style-check:
     docker:
@@ -50,6 +53,7 @@ jobs:
   deploy:
     executor: gcp-cli/google
     steps:
+      - *set_deploy_key
       - install:
           version: 268.0.0
       - initialize
