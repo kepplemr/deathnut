@@ -12,7 +12,7 @@ references:
   set_deploy_key: &set_deploy_key
     run:
       name: Set deploy key
-      command: GCLOUD_SERVICE_KEY=$GCLOUD_DEPLOY_KEY
+      command: export GCLOUD_SERVICE_KEY=$GCLOUD_DEPLOY_KEY
 jobs:
   style-check:
     docker:
