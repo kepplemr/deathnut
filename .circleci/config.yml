@@ -49,7 +49,7 @@ jobs:
       - save_cache:
           key: tested-deathnut-{{ .Revision }}
           paths:
-            - .tox/dist
+            - ${HOME}/project/.tox/dist
   deploy:
     executor: gcp-cli/google
     steps:
