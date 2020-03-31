@@ -12,12 +12,14 @@ references:
         pyenv global 3.7.0 system
         gsutil cp gs://dist.getwellio.com/projects/master/generate-openapi-$GENERATE_OPENAPI_VERSION.zip ./generate-openapi.zip
         pip install --target=/home/circleci/project/test/e2e_tests/recipe-service generate-openapi.zip
-  set_test_key: &set_test_key
+        cp test/e2e_tests/recipe-service/deploy/openapi/defaults/defaults.yaml test/e2e_tests/recipe-service/generate_openapi
+  set_test_project: &set_test_project
     run:
       name: Set test key
       command: |
         echo ${GCLOUD_TEST_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
         gcloud auth activate-service-account --key-file=${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
+        gcloud docker -a
 jobs:
   style-check:
     docker:
@@ -42,7 +44,7 @@ jobs:
           version: 268.0.0
       - initialize
       - *install_generate_openapi
-      - *set_test_key
+      - *set_test_project
       - run:
           name: Install tox
           command: |
@@ -50,12 +52,9 @@ jobs:
             sudo apt-get install python-dev -y
             pip install -U pip
             pip install --user tox
-            gcloud docker -a
       - run:
           name: Run tox
-          command: |
-            echo $GCLOUD_SERVICE_KEY
-            tox
+          command: tox
       - save_cache:
           key: tested-deathnut-{{ .Revision }}
           paths:
