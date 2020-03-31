@@ -62,7 +62,7 @@ jobs:
             - tested-deathnut-{{ .Revision }}
       - run:
           name: Deploy artifact
-          command: find ./project/.tox/dist -name *.zip -exec gsutil cp {} "gs://dist.getwellio.com/projects/deathnut/${CIRCLE_BRANCH}/" \;
+          command: find /home/circleci/project/.tox/dist -name *.zip -exec gsutil cp {} "gs://dist.getwellio.com/projects/deathnut/${CIRCLE_BRANCH}/" \;
 workflows:
   build_test_deploy:
     jobs:
