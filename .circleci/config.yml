@@ -34,6 +34,7 @@ jobs:
       image: ubuntu-1604:201903-01
     environment:
       GENERATE_OPENAPI_VERSION: 1.0
+      BOTO_CONFIG: /dev/null
     steps:
       - checkout
       - install:
