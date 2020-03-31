@@ -203,4 +203,3 @@ security:
   - api_key: []
 swagger: '2.0'
 x-components: {}
-
