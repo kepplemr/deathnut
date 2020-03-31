@@ -12,6 +12,11 @@ references:
         cd $(pyenv root)
         git pull
         pyenv global 3.7.0
+  dump_keys: &dump_keys
+    run:
+      name: Dump keys
+      command: |
+        echo ${GCLOUD_SERVICE_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
 jobs:
   style-check:
     docker:
@@ -40,6 +45,7 @@ jobs:
             pip install -U pip
             pip install --user tox
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
+      - *dump_keys
       - *update_pyenv
       - run:
           name: Run tox
