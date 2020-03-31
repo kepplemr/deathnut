@@ -11,7 +11,7 @@ references:
       command: |
         cd $(pyenv root)
         git pull
-        pyenv global 3.7.0
+        pyenv shell 3.7.0 system
   dump_keys: &dump_keys
     run:
       name: Dump keys
