@@ -4,6 +4,13 @@ orbs:
 commands:
   install: gcp-cli/install
   initialize: gcp-cli/initialize
+references:
+  update_pyenv: &update_pyenv
+    run:
+      name: Update pyenv
+      command: |
+        cd $(pyenv root)
+        git pull
 jobs:
   style-check:
     docker:
@@ -32,6 +39,7 @@ jobs:
             pip install -U pip
             pip install --user tox
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
+      - *update_pyenv
       - run:
           name: Run tox
           command: tox
