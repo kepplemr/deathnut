@@ -44,7 +44,7 @@ class FastapiAuthorization(BaseAuthorizationInterface):
         request.deathnut_user = kwargs.pop('deathnut_user', 'Unauthenticated')
         asyncio.set_event_loop(loop)
         results = loop.run_until_complete(asyncio.gather(loop.run_in_executor(None,
-                                          functools.partial(self._is_authorized,
+                                          functools.partial(self.is_authorized,
                                           request.deathnut_calling_user, dn_role, dn_rid)),
                                           dn_func(*args, request=request, **kwargs)))
         if results[0]:

@@ -56,7 +56,7 @@ class TestRestDeathnutClient(unittest.TestCase):
         self.assertTrue(auth_o._execute_if_authorized("test_user", "own", random_resource_id, True,
             True, False, execute_me_on_success))
 
-    @patch.object(auth_o, "_is_authorized", new=slow_auth)
+    @patch.object(auth_o, "is_authorized", new=slow_auth)
     def test_dont_wait_speeds_up(self):
         random_resource_id = str(uuid.uuid4())
         start = timer()

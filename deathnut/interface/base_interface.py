@@ -87,11 +87,10 @@ class BaseAuthorizationInterface(ABC):
         return decorator
 
     def _change_roles(self, action, roles, resource_id, **kwargs):
-        user = kwargs.get('deathnut_calling_user', 'Unauthenticated')
+        user = kwargs.get('deathnut_user', 'Unauthenticated')
         if not self._is_authenticated(user):
             logger.warn("Unauthenticated user attempt to update roles")
             return
-        user = kwargs.get("deathnut_user", "")
         if roles:
             for role in roles:
                 action(user, role, resource_id)
@@ -112,11 +111,13 @@ class BaseAuthorizationInterface(ABC):
             return False
         return True
 
-    def _is_authorized(self, user, role, resource_id):
+    def is_authorized(self, user, role, resource_id):
         """user is authenticated and has access to resource"""
+        if not self._is_authenticated(user):
+            return not self._strict_default
         return self._client.check_role(user, role, resource_id)
 
-    def _is_authenticated(self, user):
+    def is_authenticated(self, user):
         return user != "Unauthenticated"
 
 
@@ -149,7 +150,7 @@ class BaseAuthorizationInterface(ABC):
             return self._execute_asynchronously(dn_func, dn_role, dn_rid, *args,
                                                 deathnut_calling_user=dn_user,
                                                 deathnut_user=dn_user, **kwargs)
-        if self._is_authorized(dn_user, dn_role, dn_rid):
+        if self.is_authorized(dn_user, dn_role, dn_rid):
             return self._execute(dn_func, *args, deathnut_calling_user=dn_user,
                                  deathnut_user=dn_user, **kwargs)
         raise DeathnutException("Not authorized")
@@ -165,7 +166,7 @@ class BaseAuthorizationInterface(ABC):
         with ThreadPoolExecutor() as ex:
             # assigns should not occur on GET / will not succeed as we dont pass user info
             fetched_result = ex.submit(dn_func, *args, **kwargs)
-            is_authorized = ex.submit(self._is_authorized, dn_user, dn_role, dn_rid)
+            is_authorized = ex.submit(self.is_authorized, dn_user, dn_role, dn_rid)
             if is_authorized.result():
                 return fetched_result.result()
             raise DeathnutException("Not authorized")
