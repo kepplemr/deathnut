@@ -15,7 +15,7 @@ references:
     run:
       name: Set test key
       command: |
-        echo "export GCLOUD_SERVICE_KEY=${GCLOUD_TEST_KEY}" >> $BASH_ENV
+        echo 'export GCLOUD_SERVICE_KEY=${GCLOUD_TEST_KEY}' >> $BASH_ENV
         echo ${GCLOUD_SERVICE_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
 jobs:
   style-check:
