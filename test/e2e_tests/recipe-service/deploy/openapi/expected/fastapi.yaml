@@ -13,6 +13,7 @@ definitions:
         title: Requires
         type: string
       revoke:
+        default: false
         title: Revoke
         type: boolean
       user:
@@ -23,7 +24,6 @@ definitions:
     - user
     - requires
     - grants
-    - revoke
     title: DeathnutAuthSchema
     type: object
   HTTPValidationError:

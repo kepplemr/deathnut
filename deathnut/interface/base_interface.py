@@ -87,7 +87,8 @@ class BaseAuthorizationInterface(ABC):
         return decorator
 
     def _change_roles(self, action, roles, resource_id, **kwargs):
-        if not kwargs.get('deathnut_calling_user'):
+        user = kwargs.get('deathnut_calling_user', 'Unauthenticated')
+        if not self._is_authenticated(user):
             logger.warn("Unauthenticated user attempt to update roles")
             return
         user = kwargs.get("deathnut_user", "")
