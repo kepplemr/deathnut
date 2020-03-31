@@ -5,14 +5,18 @@ commands:
   install: gcp-cli/install
   initialize: gcp-cli/initialize
 references:
-  dump_test_key: &dump_test_key
+  install_generate_openapi: &install_generate_openapi
     run:
-      name: Dump keys
-      command: echo ${GCLOUD_SERVICE_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
-  set_deploy_key: &set_deploy_key
+      name: Install generate_openapi
+      command: |
+        gsutil cp gs://dist.getwellio.com/projects/master/generate-openapi-$GENERATE_OPENAPI_VERSION.zip ./generate-openapi.zip
+        pip install --target=/home/circleci/project/test/e2e_tests/recipe-service generate-openapi.zip
+  set_test_key: &set_test_key
     run:
-      name: Set deploy key
-      command: echo 'export GCLOUD_SERVICE_KEY=${GCLOUD_DEPLOY_KEY}' >> ${BASH_ENV}
+      name: Set test key
+      command: |
+        echo "export GCLOUD_SERVICE_KEY=${GCLOUD_TEST_KEY}" >> $BASH_ENV
+        echo ${GCLOUD_SERVICE_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
 jobs:
   style-check:
     docker:
@@ -28,11 +32,14 @@ jobs:
   test:
     machine:
       image: ubuntu-1604:201903-01
+    environment:
+      GENERATE_OPENAPI_VERSION: 1.0
     steps:
       - checkout
       - install:
           version: 268.0.0
       - initialize
+      - *install_generate_openapi
       - run:
           name: Install tox
           command: |
@@ -42,7 +49,7 @@ jobs:
             pip install -U pip
             pip install --user tox
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
-      - *dump_test_key
+      - *set_test_key
       - run:
           name: Run tox
           command: tox
@@ -53,7 +60,6 @@ jobs:
   deploy:
     executor: gcp-cli/google
     steps:
-      - *set_deploy_key
       - install:
           version: 268.0.0
       - initialize
