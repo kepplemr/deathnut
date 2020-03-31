@@ -41,6 +41,7 @@ jobs:
           version: 268.0.0
       - initialize
       - *install_generate_openapi
+      - *set_test_key
       - run:
           name: Install tox
           command: |
@@ -50,7 +51,6 @@ jobs:
             pip install -U pip
             pip install --user tox
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
-      - *set_test_key
       - run:
           name: Run tox
           command: |
