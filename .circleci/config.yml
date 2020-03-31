@@ -9,6 +9,7 @@ references:
     run:
       name: Install generate_openapi
       command: |
+        pyenv global 3.7.0 system
         gsutil cp gs://dist.getwellio.com/projects/master/generate-openapi-$GENERATE_OPENAPI_VERSION.zip ./generate-openapi.zip
         pip install --target=/home/circleci/project/test/e2e_tests/recipe-service generate-openapi.zip
   set_test_key: &set_test_key
@@ -47,7 +48,6 @@ jobs:
           command: |
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
             sudo apt-get install python-dev -y
-            pyenv global 3.7.0 system
             pip install -U pip
             pip install --user tox
             gcloud docker -a
