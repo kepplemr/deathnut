@@ -5,18 +5,11 @@ commands:
   install: gcp-cli/install
   initialize: gcp-cli/initialize
 references:
-  update_pyenv: &update_pyenv
-    run:
-      name: Update pyenv
-      command: |
-        cd $(pyenv root)
-        git pull
-        pyenv global 3.7.0 system
-  dump_keys: &dump_keys
+  dump_test_key: &dump_test_key
     run:
       name: Dump keys
       command: |
-        echo ${GCLOUD_SERVICE_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
+        echo ${GCLOUD_TEST_KEY} > ${HOME}/project/test/e2e_tests/recipe-service/keys/jwt-test.json
 jobs:
   style-check:
     docker:
@@ -41,12 +34,12 @@ jobs:
           name: Install tox
           command: |
             sudo apt-get install python-dev -y
+            pyenv global 3.7.0 system
             gcloud docker -a
             pip install -U pip
             pip install --user tox
             echo 'export PATH=~/.local/bin:$PATH' >> $BASH_ENV
-      - *dump_keys
-      - *update_pyenv
+      - *dump_test_key
       - run:
           name: Run tox
           command: tox
