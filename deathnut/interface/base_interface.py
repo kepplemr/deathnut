@@ -88,7 +88,7 @@ class BaseAuthorizationInterface(ABC):
 
     def _change_roles(self, action, roles, resource_id, **kwargs):
         user = kwargs.get('deathnut_user', 'Unauthenticated')
-        if not self._is_authenticated(user):
+        if not self.is_authenticated(user):
             logger.warn("Unauthenticated user attempt to update roles")
             return
         if roles:
@@ -113,7 +113,7 @@ class BaseAuthorizationInterface(ABC):
 
     def is_authorized(self, user, role, resource_id):
         """user is authenticated and has access to resource"""
-        if not self._is_authenticated(user):
+        if not self.is_authenticated(user):
             return not self._strict_default
         return self._client.check_role(user, role, resource_id)
 
@@ -193,7 +193,7 @@ class BaseAuthorizationInterface(ABC):
         """
         if not self._is_auth_required(dn_user, dn_enabled, dn_strict):
             return self._execute(dn_func, *args, **kwargs)
-        if self._is_authenticated(dn_user):
+        if self.is_authenticated(dn_user):
             return self._execute(dn_func, *args, deathnut_calling_user=dn_user,
                                  deathnut_user=dn_user, **kwargs)
         raise DeathnutException("No authentication provided")
