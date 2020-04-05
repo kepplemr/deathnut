@@ -10,7 +10,7 @@ privileges required are easily understood by glancing at the endpoint signature.
 
 # contents
 - [Deathnut overview](#deathnut-overview)
-- [Redis overview](#redis-overview)
+- [Redis overview](docs/redis.md)
 - [Pre-commit setup](#pre-commit-setup)
 
 # pre-commit setup
