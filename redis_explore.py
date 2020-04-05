@@ -6,6 +6,7 @@ Tests time and space performance of redis data strategies for:
 4) Get ids for user, role
 """
 import functools
+import itertools
 import time
 import uuid
 
@@ -15,7 +16,8 @@ import redis
 USER = "michael"
 SERVICE_NAME = "dimsum_edited-recipes"
 PERMISSION = "view"
-TEST_SIZES = [10, 400, 1_000_000]
+TEST_SIZES = [10, 400, 10_000, 1_000_000]
+#TEST_SIZES = [300]
 TEST_RUNS_PER_SIZE = 10
 
 docker_client = docker.from_env()
@@ -30,6 +32,8 @@ def time_me(func):
     def timed(*args, **kwargs):
         t0 = time.time()
         func(*args, **kwargs)
+        # if ret:
+        #     print(str(ret))
         t1 = time.time()
         return t1 - t0
     return timed
@@ -39,6 +43,19 @@ def generate_ids(size):
     for i in range(size):
         results[i] = str(uuid.uuid4())
     return results
+
+def get_resources(redis_conn, user, role, page_size=10):
+    """
+    Note
+    ----
+    In real redis, page_size is just a suggestion. If a value less than hash-max-ziplist-entries
+    is provided, it will be ignored. See https://redis.io/commands/scan.
+    """
+    cursor = "0"
+    while cursor != 0:
+        cursor, data = redis_conn.hscan("{}:{}:{}".format(SERVICE_NAME, user, role),
+            cursor=cursor, count=page_size)
+        yield [x[0].decode() for x in data.items()]
 
 class BaseImplementation(object):
     def __init__(self):
@@ -54,21 +71,23 @@ class HashImplementation(BaseImplementation):
     @time_me
     def assign_role(self, resource_ids):
         for r_id in resource_ids:
-            self.redis_client.hset("{}:{}:{}".format(SERVICE_NAME, USER, 'view'), r_id, 1)
+            self.redis_client.hset("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION), r_id, 1)
     @time_me
     def check_role(self, resource_ids):
         for r_id in resource_ids:
-            assert bool(self.redis_client.hget("{}:{}:{}".format(SERVICE_NAME, USER, 'view'), r_id)) == True
+            self.redis_client.hget("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION), r_id)
     @time_me
     def remove_role(self, resource_ids):
         for r_id in resource_ids:
-            self.redis_client.hdel("{}:{}:{}".format(SERVICE_NAME, USER, 'view'), r_id)
+            self.redis_client.hdel("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION), r_id)
     @time_me
     def get_ids_for_user_and_role(self, limit):
+        return list(itertools.chain.from_iterable(self.get_ids(limit)))
+    def get_ids(self, page_size=10):
         cursor = "0"
         while cursor != 0:
             cursor, data = self.redis_client.hscan("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION),
-                cursor=cursor, count=limit)
+                cursor=cursor, count=page_size)
             yield [x[0].decode() for x in data.items()]
 
 class SetImplementation(BaseImplementation):
@@ -81,7 +100,7 @@ class SetImplementation(BaseImplementation):
     @time_me
     def check_role(self, resource_ids):
         for r_id in resource_ids:
-            assert bool(self.redis_client.sismember("{}:{}:{}".format(SERVICE_NAME, USER, 'view'), r_id)) == True
+            self.redis_client.sismember("{}:{}:{}".format(SERVICE_NAME, USER, 'view'), r_id)
     @time_me
     def remove_role(self, resource_ids):
         for r_id in resource_ids:
@@ -101,12 +120,12 @@ for strat in [HashImplementation, SetImplementation]:
             resource_ids = generate_ids(test_size)
             assign_time += curr_strat.assign_role(resource_ids)
             check_time += curr_strat.check_role(resource_ids)
-            remove_time += curr_strat.remove_role(resource_ids)
             get_ids_time += curr_strat.get_ids_for_user_and_role(limit=test_size)
+            remove_time += curr_strat.remove_role(resource_ids)
         curr_strat.memory_info()
         print('Average assign time for size {}: {}'.format(test_size, (assign_time / TEST_RUNS_PER_SIZE)))
         print('Average check time for size {}: {}'.format(test_size, (check_time / TEST_RUNS_PER_SIZE)))
-        print('Average remove time for size {}: {}'.format(test_size, (remove_time / TEST_RUNS_PER_SIZE)))
-        print('Average get_ids time for size {}: {}\n'.format(test_size, (get_ids_time / TEST_RUNS_PER_SIZE)))
+        print('Average get_ids time for size {}: {}'.format(test_size, (get_ids_time / TEST_RUNS_PER_SIZE)))
+        print('Average remove time for size {}: {}\n'.format(test_size, (remove_time / TEST_RUNS_PER_SIZE)))
 # view_resources = list(itertools.chain.from_iterable(get_resources(redis_client, USER, 'view')))
 # scan 0 match dimsum_edited-recipes:michael:*
