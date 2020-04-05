@@ -9,6 +9,7 @@ Decorators are provided so that your service doesn't have to handle authorizatio
 privileges required are easily understood by glancing at the endpoint signature. 
 
 # contents
+[TOC]
 - [Deathnut overview](#deathnut-overview)
 - [Redis overview](docs/redis.md)
 - [Pre-commit setup](#pre-commit-setup)
