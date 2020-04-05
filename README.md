@@ -1,14 +1,17 @@
-# deathnut
-Auth-o service
+# deathnut overview
+Deathnut is an extremely simple, easy-to-use, and blazing fast authorization library. It supports
+several pyton REST tools (Flask, Falcon, Fastapi) and uses redis as the data store. 
+
+Services can add authorization support by defining a list of privileges -- e.g., ['view', 'edit', 
+'own'] and denoting endpoints that assign or require said privileges. 
+
+Decorators are provided so that your service doesn't have to handle authorization logic itself - and
+privileges required are easily understood by glancing at the endpoint signature. 
+
+# contents
+- [Deathnut overview](#deathnut-overview)
+- [Redis overview](#redis-overview)
+- [Pre-commit setup](#pre-commit-setup)
 
 # pre-commit setup
 1) brew install pre-commit
-
-# e2e tests
-1) Post a recipe - user is now owner
-2) Get a recipe - user can get their recipe
-3) Get a recipe from another user - user cannnot access recipe
-4) Share a recipe - just through the API for now.
-5) Other user can now GET the created recipe
-
-6) Patch to add UPDATE?
