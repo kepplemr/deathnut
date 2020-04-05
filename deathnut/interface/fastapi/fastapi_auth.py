@@ -57,8 +57,9 @@ class FastapiAuthorization(BaseAuthorizationInterface):
         return kwargs.get("dont_wait", request.method == "GET")
 
     def assign_roles(self, resource_id, roles, **kwargs):
-        dn_calling_user = kwargs.get('deathnut_calling_user', kwargs['request'].deathnut_calling_user)
-        dn_user = kwargs.get('deathnut_user', kwargs['request'].deathnut_user)
+        request = kwargs.get('request')
+        dn_calling_user = kwargs.get('deathnut_calling_user', getattr(request, 'deathnut_calling_user', 'Unauthenticated'))
+        dn_user = kwargs.get('deathnut_user', getattr(request, 'deathnut_user', 'Unauthenticated'))
         return super(FastapiAuthorization, self)._change_roles(self._client.assign_role, roles, resource_id,
             deathnut_calling_user=dn_calling_user, deathnut_user=dn_user)
 

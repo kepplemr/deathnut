@@ -25,6 +25,9 @@ class DeathnutClient(object):
             self._name = "{}_{}".format(service, resource_type)
         else:
             self._name = service
+    
+    def get_redis_connection(self):
+        return self._client
 
     def _check_authenticated(self, user):
         if user == "Unauthenticated":
@@ -46,7 +49,12 @@ class DeathnutClient(object):
         self._client.hdel("{}:{}:{}".format(self._name, user, role), resource_id)
 
     def get_resources(self, user, role, page_size=10):
-        """redis default is a count of 10"""
+        """
+        Note
+        ----
+        In real redis, page_size is just a suggestion. If a value less than hash-max-ziplist-entries
+        is provided, it will be ignored. See https://redis.io/commands/scan.
+        """
         cursor = "0"
         while cursor != 0:
             cursor, data = self._client.hscan("{}:{}:{}".format(self._name, user, role),

@@ -49,6 +49,9 @@ class BaseAuthorizationInterface(ABC):
 
     def get_client(self):
         return self._client
+    
+    def get_redis_connection(self):
+        return self._client.get_redis_connection()
 
     def _get_auth_arguments(self, jwt_header, **kwargs):
         enabled = kwargs.get("enabled", self._enabled_default)
