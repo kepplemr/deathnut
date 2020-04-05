@@ -49,7 +49,7 @@ class BaseAuthorizationInterface(ABC):
 
     def get_client(self):
         return self._client
-    
+
     def get_redis_connection(self):
         return self._client.get_redis_connection()
 

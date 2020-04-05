@@ -25,7 +25,7 @@ class DeathnutClient(object):
             self._name = "{}_{}".format(service, resource_type)
         else:
             self._name = service
-    
+
     def get_redis_connection(self):
         return self._client
 
