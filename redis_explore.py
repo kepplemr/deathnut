@@ -120,9 +120,10 @@ for strat in [HashImplementation, SetImplementation]:
             resource_ids = generate_ids(test_size)
             assign_time += curr_strat.assign_role(resource_ids)
             check_time += curr_strat.check_role(resource_ids)
+            if run_number == 0:
+                curr_strat.memory_info()
             get_ids_time += curr_strat.get_ids_for_user_and_role(limit=test_size)
             remove_time += curr_strat.remove_role(resource_ids)
-        curr_strat.memory_info()
         print('Average assign time for size {}: {}'.format(test_size, (assign_time / TEST_RUNS_PER_SIZE)))
         print('Average check time for size {}: {}'.format(test_size, (check_time / TEST_RUNS_PER_SIZE)))
         print('Average get_ids time for size {}: {}'.format(test_size, (get_ids_time / TEST_RUNS_PER_SIZE)))
