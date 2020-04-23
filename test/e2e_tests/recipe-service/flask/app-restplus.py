@@ -22,13 +22,12 @@ recipe_with_id = api.inherit("RecipeWithId", recipe_schema, {
 recipe_partial = api.model("PartialRecipeSchema", {
     "title": fields.String(description="Recipe title"),
     "ingredients": fields.List(fields.String(), description="Recipe ingredients")})
-recipe_list = api.model("RecipeList", fields.List(fields.Nested(recipe_with_id)))
 
 redis_conn = redis.Redis(host="redis", port=6379)
 auth_o = FlaskRestplusAuthorization(api, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
 auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
-auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit'])
+auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'own'])
 auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 
 @ns.route("")
@@ -49,11 +48,11 @@ class RecipeCreate(Resource):
         return new_recipe, 200
     
     @api.doc(params={'limit': {'description': 'optional limit', 'in': 'query', 'type': 'integer', 'required': False}})
-    @ns.marshal_with(recipe_list)
+    @ns.marshal_with(recipe_with_id, as_list=True)
     @auth_o.fetch_accessible_for_user('view')
     def get(self, **kwargs):
         limit = request.args.get('limit', 10)
-        return [recipe_db[x] for x in kwargs.get('deathnut_ids')][0:limit]
+        return [recipe_db[x] for x in kwargs.get('deathnut_ids')][0:limit], 200
 
 
 @ns.route("/<string:id>")
