@@ -137,10 +137,46 @@ def deathnut_basics(port):
     assert response.status_code == 200
     response = make_jwt_request(requests.patch, "http://localhost:{}/recipe/{}".format(port, pierogi_id), kim_jwt, another_update)
     assert response.status_code == 200
+    # update the recipe
+    recipe = response.json()
     # kim (edit) can grant view to jennifer
-    auth_grant = {"id": pierogi_id, "requires": "edit", "grants": ["view"], "user": "jennifer", "revoke": True}
+    auth_grant = {"id": pierogi_id, "requires": "edit", "grants": ["view"], "user": "jennifer"}
     response = make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), kim_jwt, auth_grant)
     assert response.status_code == 200
+    # jennifer can now view the recipe again
+    response = make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pierogi_id), jennifer_jwt)
+    assert response.status_code == 200
+    assert json.loads(response.text) == recipe
+
+
+def list_endpoint(port):
+    michael_jwt = generate_jwt("michael")
+    recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt)
+    orig_recipes_length = len(recipes_response.json())
+    print('Recipes response -> ' + str(recipes_response.text))
+    print('Recipes response length -> ' + str(orig_recipes_length))
+    # michael creates, edits, and gets a new recipe
+    recipe = {"title": "Enchiladas", "ingredients": ["tortilla", "cheese"]}
+    enchiladas_id = json.loads(make_jwt_request(requests.post,"http://localhost:{}/recipe".format(port), michael_jwt, recipe).text)["id"]
+    print('Enchiladas id -> ' + str(enchiladas_id))
+    recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt)
+    new_recipes_length = len(recipes_response.json())
+    print('Recipes response -> ' + str(recipes_response.text))
+    print('Recipes response length -> ' + str(len(recipes_response.json())))
+    assert new_recipes_length == (orig_recipes_length + 1)
+
+
+def revoke_all(port):
+    michael_jwt = generate_jwt("michael")
+    recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt).json()
+    ids = [dict(x)['id'] for x in recipes_response]
+    for revoke_id in ids:
+        for user in ['kim', 'jennifer', 'michael']:
+            auth_grant = {"id": revoke_id, "requires": "own", "grants": ["view", "edit", "own"], "user": user, "revoke": True}
+            make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), michael_jwt, auth_grant)
+    for user in ['kim', 'jennifer', 'michael']:
+        recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt)
+        assert len(recipes_response.json()) == 0       
 
 
 def remove_output():
@@ -164,6 +200,8 @@ def generate_and_deploy_openapi_spec(tag):
         'deploy/openapi/output']
     deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
         'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
+    # deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
+    #     'deploy/openapi/output/{}.yaml'.format(tag)]
     subprocess.check_call(generate_cmd)
     subprocess.check_call(deploy_cmd)
     try:
@@ -203,6 +241,10 @@ def test_fastapi_e2e():
     run_e2e_suite('recipe-service-fastapi', 82, 8082)
 
 
+def test_falcon_e2e():
+    run_e2e_suite('recipe-service-falcon', 83, 8083)
+
+
 def run_e2e_suite(container, unsecured_port, secured_port):
     print('Testing: ' + container)
     tag = container.split('-')[-1]
@@ -212,10 +254,13 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     unsecured_requests(unsecured_port)
     secured_requests(secured_port)
     deathnut_basics(secured_port)
-    stop_and_remove_container(container, 'esp-{}'.format(tag))
+    list_endpoint(secured_port)
+    revoke_all(secured_port)
+    #stop_and_remove_container(container, 'esp-{}'.format(tag))
 
-atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
+#atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":
-    test_apispec_e2e()
+    #test_apispec_e2e()
     test_restplus_e2e()
-    test_fastapi_e2e()
+    #test_fastapi_e2e()
+    #test_falcon_e2e()

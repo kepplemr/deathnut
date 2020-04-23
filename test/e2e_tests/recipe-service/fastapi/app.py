@@ -8,20 +8,21 @@ from fastapi import FastAPI
 from generate_openapi.generate_template import generate_openapi_template
 from schema.app_schemas import PartialRecipe, Recipe, RecipeWithId
 from starlette.requests import Request
+from typing import List, Optional
 
 app = FastAPI()
 redis_conn = redis.Redis(host="redis", port=6379)
 auth_o = FastapiAuthorization(app, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
 auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
-auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit'])
+auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'own'])
 auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 logger = get_deathnut_logger(__name__)
 recipe_db = dict()
 
 @app.get("/recipe/{id}", response_model=RecipeWithId)
 @auth_o.requires_role('view')
-async def post_recipe(id: str, request: Request):
+async def get_recipe(id: str, request: Request):
     return recipe_db[id]
 
 @app.post("/recipe", response_model=RecipeWithId)
@@ -32,6 +33,11 @@ async def create_recipe(recipe: Recipe, request: Request):
     recipe_db[new_id] = new_recipe
     auth_o.assign_roles(new_id, ["own", "edit", "view"], request=request)
     return new_recipe
+
+@app.get("/recipe", response_model=List[RecipeWithId])
+@auth_o.fetch_accessible_for_user('view')
+async def get_recipes(request: Request, limit: int = 10):
+    return [recipe_db[x] for x in request.deathnut_ids][0:limit]
 
 @app.patch("/recipe/{id}", response_model=RecipeWithId)
 @auth_o.requires_role('edit')

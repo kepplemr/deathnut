@@ -37,7 +37,7 @@ class DeathnutClient(object):
         self._check_authenticated(user)
         logger.warn("Assigning role <{}> to user <{}> for resource <{}>, id <{}>".format(role, user,
             self._name, resource_id))
-        self._client.hset("{}:{}:{}".format(self._name, user, role), resource_id, "T")
+        self._client.hset("{}:{}:{}".format(self._name, user, role), resource_id, 1)
 
     def check_role(self, user, role, resource_id):
         return bool(self._client.hget("{}:{}:{}".format(self._name, user, role), resource_id))

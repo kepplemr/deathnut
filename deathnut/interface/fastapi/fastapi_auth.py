@@ -27,6 +27,7 @@ class FastapiAuthorization(BaseAuthorizationInterface):
     def _execute(dn_func, request, *args, **kwargs):
         request.deathnut_calling_user = kwargs.pop('deathnut_calling_user', 'Unauthenticated')
         request.deathnut_user = kwargs.pop('deathnut_user', 'Unauthenticated')
+        request.deathnut_ids = kwargs.pop('deathnut_ids', [])
         return asyncio.run(dn_func(*args, request=request, **kwargs))
 
     @staticmethod
@@ -91,12 +92,12 @@ class FastapiAuthEndpoint(BaseAuthEndpoint):
         @self._app.post(self._name, response_model=DeathnutAuthSchema)
         @self._auth_o.authentication_required(strict=True)
         async def auth(deathnutAuth: DeathnutAuthSchema, request: Request):
-            calling_user = get_user_from_jwt_header(self._auth_o.get_auth_header(request))
+            calling_user = request.deathnut_user
             if not self._auth_o.get_client().check_role(calling_user, deathnutAuth.requires, deathnutAuth.id):
                 raise DeathnutException('Unauthorized to grant')
             # make sure the granting user has access to grant all roles.
             for role in deathnutAuth.grants:
-                self._check_grant_enabled(deathnutAuth.requires, role)
+                self.check_grant_enabled(deathnutAuth.requires, role)
             if deathnutAuth.revoke:
                 self._auth_o.revoke_roles(deathnutAuth.id, deathnutAuth.grants, deathnut_user=deathnutAuth.user, request=request)
             else:

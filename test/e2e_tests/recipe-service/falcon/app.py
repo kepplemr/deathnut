@@ -21,6 +21,8 @@ class RecipeWithId(Recipe):
 class RecipePartial(Schema):
     title = fields.String(description="Recipe title")
     ingredients = fields.List(fields.String(), description="Recipe ingredients")
+class RecipeList(Schema):
+    fields.List(fields.Nested(RecipeWithId), description="List of recipes")
 
 app = falcon.API()
 redis_conn = redis.Redis(host="redis", port=6379)
@@ -28,10 +30,11 @@ spec = APISpec(title="Example recipe service", version="1.0.0", openapi_version=
   plugins=[FalconPlugin(app), MarshmallowPlugin()])
 auth_o = FalconAuthorization(app, spec, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
-auth_o.create_auth_endpoint("/auth-recipe", requires_role="own", grants_role="view")
+auth_endpoint = auth_o.create_auth_endpoint("/auth-recipe")
+auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'own'])
+auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 
 class RecipeBase:
-    # TODO list
     @auth_o.authentication_required()
     def on_post(self, req, resp, **kwargs):
         """
@@ -59,6 +62,25 @@ class RecipeBase:
         auth_o.assign_roles(new_id, ['own','edit','view'], **kwargs)
         resp.media = new_recipe
         resp.status = falcon.HTTP_200
+  
+    @auth_o.fetch_accessible_for_user('view')
+    def on_get(self, req, resp, limit=10, **kwargs):
+        """
+        Recipe GET endpoint
+        ---
+        operationId: get_recipe
+        parameters:
+        - in: path
+          name: limit
+          type: integer
+          required: False
+        responses:
+          200:
+            description: the created recipe
+            schema: RecipeList
+        """
+        resp.media = [recipe_db[x] for x in kwargs.get('deathnut_ids')][0:limit]
+        resp.status = falcon.HTTP_200
 
 
 class RecipeSpecific:
@@ -67,9 +89,9 @@ class RecipeSpecific:
     @auth_o.requires_role("edit")
     def on_patch(self, req, resp, id, *args, **kwargs):
         """
-        Recipe PATCH endpoint
+        Recipe PATCH BY ID endpoint
         ---
-        operationId: patch_recipe
+        operationId: patch_recipe_by_id
         parameters:
         - in: path
           name: id
@@ -91,9 +113,9 @@ class RecipeSpecific:
     @auth_o.requires_role('view')
     def on_get(self, req, resp, id, **kwargs):
         """
-        Recipe POST endpoint
+        Recipe GET BY ID endpoint
         ---
-        operationId: get_recipe
+        operationId: get_recipe_by_id
         parameters:
         - in: path
           name: id

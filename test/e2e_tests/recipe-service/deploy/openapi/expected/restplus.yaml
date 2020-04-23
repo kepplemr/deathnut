@@ -94,6 +94,28 @@ paths:
       tags:
       - ''
   /recipe:
+    get:
+      operationId: get_recipe_create
+      parameters:
+      - description: optional limit
+        in: query
+        name: limit
+        required: false
+        type: integer
+      - description: An optional fields mask
+        format: mask
+        in: header
+        name: X-Fields
+        type: string
+      responses:
+        '200':
+          description: Success
+          schema:
+            items:
+              $ref: '#/definitions/RecipeWithId'
+            type: array
+      tags:
+      - recipe
     post:
       operationId: post_recipe_create
       parameters:

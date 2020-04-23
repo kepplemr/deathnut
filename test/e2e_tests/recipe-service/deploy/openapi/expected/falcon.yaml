@@ -6,20 +6,27 @@ info:
 definitions:
   DeathnutAuthSchema:
     properties:
+      grants:
+        description: The role to assign or revoke
+        items:
+          type: string
+        type: array
       id:
         description: Resource id
+        type: string
+      requires:
+        description: User role checked for grant privilege
         type: string
       revoke:
         description: If True, attempt to revoke the privilege
         type: boolean
-      role:
-        description: The role to assign or revoke
-        type: string
       user:
         description: User to assign role to
         type: string
     required:
+    - grants
     - id
+    - requires
     - user
     type: object
   Recipe:
@@ -35,6 +42,9 @@ definitions:
     required:
     - ingredients
     - title
+    type: object
+  RecipeList:
+    properties: {}
     type: object
   RecipePartial:
     properties:
@@ -81,7 +91,7 @@ paths:
             $ref: '#/definitions/DeathnutAuthSchema'
   /recipe/{id}:
     get:
-      operationId: get_recipe
+      operationId: get_recipe_by_id
       parameters:
       - in: path
         name: id
@@ -93,7 +103,7 @@ paths:
           schema:
             $ref: '#/definitions/RecipeWithId'
     patch:
-      operationId: patch_recipe
+      operationId: patch_recipe_by_id
       parameters:
       - in: path
         name: id
@@ -110,6 +120,18 @@ paths:
           schema:
             $ref: '#/definitions/RecipeWithId'
   /recipe:
+    get:
+      operationId: get_recipe
+      parameters:
+      - in: query
+        name: limit
+        required: false
+        type: integer
+      responses:
+        '200':
+          description: the created recipe
+          schema:
+            $ref: '#/definitions/RecipeList'
     post:
       operationId: post_recipe
       parameters:

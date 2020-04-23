@@ -59,12 +59,12 @@ class FlaskRestplusAuthEndpoint(BaseAuthEndpoint):
                 requires = dn_auth["requires"]
                 grants = dn_auth["grants"]
                 revoke = dn_auth.get("revoke", False)
-                calling_user = get_user_from_jwt_header(interface._auth_o.get_auth_header())
+                calling_user = kwargs.get('deathnut_user', 'Unauthenticated')
                 if not interface._auth_o.get_client().check_role(calling_user, requires, id):
                     raise DeathnutException('Unauthorized to grant')
                 # make sure the granting user has access to grant all roles.
                 for role in grants:
-                    interface._check_grant_enabled(requires, role)
+                    interface.check_grant_enabled(requires, role)
                 kwargs.update(deathnut_user=user)
                 if revoke:
                     interface._auth_o.revoke_roles(id, grants, **kwargs)

@@ -130,6 +130,29 @@ paths:
             $ref: '#/definitions/HTTPValidationError'
       summary: Auth
   /recipe:
+    get:
+      operationId: get_recipes_recipe_get
+      parameters:
+      - default: 10
+        in: query
+        name: limit
+        required: false
+        type: integer
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: Successful Response
+          schema:
+            items:
+              $ref: '#/definitions/RecipeWithId'
+            title: Response Get Recipes Recipe Get
+            type: array
+        '422':
+          description: Validation Error
+          schema:
+            $ref: '#/definitions/HTTPValidationError'
+      summary: Get Recipes
     post:
       consumes:
       - application/json
@@ -154,7 +177,7 @@ paths:
       summary: Create Recipe
   /recipe/{id}:
     get:
-      operationId: post_recipe_recipe__id__get
+      operationId: get_recipe_recipe__id__get
       parameters:
       - in: path
         name: id
@@ -171,7 +194,7 @@ paths:
           description: Validation Error
           schema:
             $ref: '#/definitions/HTTPValidationError'
-      summary: Post Recipe
+      summary: Get Recipe
     patch:
       consumes:
       - application/json

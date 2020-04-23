@@ -89,6 +89,19 @@ class BaseAuthorizationInterface(ABC):
             return wrapped
         return decorator
 
+    def fetch_accessible_for_user(self, role, **kwargs):
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapped(*args, **kwargs):
+                limit = kwargs.get('limit', 500)
+                jwt_header = self.get_auth_header(*args, **kwargs)
+                user, enabled, strict = self._get_auth_arguments(jwt_header, **kwargs)
+                deathnut_ids = next(self._client.get_resources(user, role, limit))
+                return self._execute_if_authenticated(user, enabled, strict, func, *args, 
+                    deathnut_ids=deathnut_ids, **kwargs)
+            return wrapped
+        return decorator            
+
     def _change_roles(self, action, roles, resource_id, **kwargs):
         user = kwargs.get('deathnut_user', 'Unauthenticated')
         if not self.is_authenticated(user):

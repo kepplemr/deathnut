@@ -45,12 +45,12 @@ class FlaskAPISpecAuthEndpoint(BaseAuthEndpoint):
         @marshal_with(DeathnutAuthSchema)
         @self._auth_o.authentication_required(strict=True)
         def auth(id, user, requires, grants, revoke=False, **kwargs):
-            calling_user = get_user_from_jwt_header(self._auth_o.get_auth_header())
+            calling_user = kwargs.get('deathnut_user', 'Unauthenticated')
             if not self._auth_o.get_client().check_role(calling_user, requires, id):
                 raise DeathnutException('Unauthorized to grant')
             # make sure the granting user has access to grant all roles.
             for role in grants:
-                self._check_grant_enabled(requires, role)
+                self.check_grant_enabled(requires, role)
             kwargs.update(deathnut_user=user)
             if revoke:
                 self._auth_o.revoke_roles(id, grants, **kwargs)
