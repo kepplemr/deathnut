@@ -46,7 +46,7 @@ class RecipeCreate(Resource):
         recipe_db[new_id] = new_recipe
         auth_o.assign_roles(new_id, ["own", "edit", "view"], **kwargs)
         return new_recipe, 200
-    
+
     @api.doc(params={'limit': {'description': 'optional limit', 'in': 'query', 'type': 'integer', 'required': False}})
     @ns.marshal_with(recipe_with_id, as_list=True)
     @auth_o.fetch_accessible_for_user('view')

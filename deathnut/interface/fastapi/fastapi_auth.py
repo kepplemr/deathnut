@@ -5,7 +5,6 @@ from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
 from deathnut.interface.base_interface import BaseAuthorizationInterface
 from deathnut.schema.pydantic.dn_schemas_pydantic import DeathnutAuthSchema
 from deathnut.util.deathnut_exception import DeathnutException
-from deathnut.util.jwt import get_user_from_jwt_header
 from deathnut.util.logger import get_deathnut_logger
 from starlette.requests import Request
 from starlette.responses import JSONResponse

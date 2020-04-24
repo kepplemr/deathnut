@@ -1,12 +1,10 @@
 import falcon
-
 from deathnut.interface.base_auth_endpoint import BaseAuthEndpoint
 from deathnut.interface.base_interface import BaseAuthorizationInterface
 from deathnut.schema.marshmallow.dn_schemas_marshmallow import \
     DeathnutAuthSchema
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
-from deathnut.util.jwt import get_user_from_jwt_header
 
 logger = get_deathnut_logger(__name__)
 

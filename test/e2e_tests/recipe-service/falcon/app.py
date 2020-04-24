@@ -62,7 +62,7 @@ class RecipeBase:
         auth_o.assign_roles(new_id, ['own','edit','view'], **kwargs)
         resp.media = new_recipe
         resp.status = falcon.HTTP_200
-  
+
     @auth_o.fetch_accessible_for_user('view')
     def on_get(self, req, resp, limit=10, **kwargs):
         """

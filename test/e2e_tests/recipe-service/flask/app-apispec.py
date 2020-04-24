@@ -4,7 +4,7 @@ import redis
 from deathnut.interface.flask.flask_apispec import FlaskAPISpecAuthorization
 from deathnut.util.logger import get_deathnut_logger
 from flask import Flask
-from flask_apispec import marshal_with, use_kwargs
+from flask_apispec import doc, marshal_with, use_kwargs
 from flask_apispec.extension import FlaskApiSpec
 from generate_openapi.generate_template import generate_openapi_template
 from schema.app_schemas import RecipeSchema
@@ -17,7 +17,7 @@ redis_conn = redis.Redis(host="redis", port=6379)
 auth_o = FlaskAPISpecAuthorization(app, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
 auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
-auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit'])
+auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'own'])
 auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 
 @app.route("/recipe/<string:id>", methods=("GET",))
@@ -36,6 +36,13 @@ def post(title, ingredients, **kwargs):
     recipe_db[new_id] = new_recipe
     auth_o.assign_roles(new_id, ["own", "edit", "view"], **kwargs)
     return new_recipe, 200
+
+@app.route("/recipe", methods=("GET",))
+@doc(params={'limit': {'description': 'optional limit', 'in': 'query', 'type': 'integer', 'required': False}})
+@marshal_with(RecipeSchema(many=True))
+@auth_o.fetch_accessible_for_user('view')
+def get_recipe_list(limit=10, **kwargs):
+    return [recipe_db[x] for x in kwargs.get('deathnut_ids')][0:limit], 200
 
 @app.route("/recipe/<string:id>", methods=("PATCH",))
 @use_kwargs(RecipeSchema(partial=True), required=True, locations=("json",))

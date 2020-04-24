@@ -1,4 +1,5 @@
 import uuid
+from typing import List
 
 import redis
 import uvicorn
@@ -8,7 +9,6 @@ from fastapi import FastAPI
 from generate_openapi.generate_template import generate_openapi_template
 from schema.app_schemas import PartialRecipe, Recipe, RecipeWithId
 from starlette.requests import Request
-from typing import List, Optional
 
 app = FastAPI()
 redis_conn = redis.Redis(host="redis", port=6379)

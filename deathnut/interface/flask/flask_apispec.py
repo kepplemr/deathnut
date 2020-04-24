@@ -3,7 +3,6 @@ from deathnut.interface.flask.flask_base import FlaskAuthorization
 from deathnut.schema.marshmallow.dn_schemas_marshmallow import (
     DeathnutAuthSchema, DeathnutErrorSchema)
 from deathnut.util.deathnut_exception import DeathnutException
-from deathnut.util.jwt import get_user_from_jwt_header
 from deathnut.util.logger import get_deathnut_logger
 from flask_apispec import marshal_with, use_kwargs
 

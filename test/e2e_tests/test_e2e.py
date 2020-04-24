@@ -176,7 +176,7 @@ def revoke_all(port):
             make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), michael_jwt, auth_grant)
     for user in ['kim', 'jennifer', 'michael']:
         recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt)
-        assert len(recipes_response.json()) == 0       
+        assert len(recipes_response.json()) == 0
 
 
 def remove_output():
@@ -185,7 +185,7 @@ def remove_output():
         os.remove(to_nuke)
 
 
-def generate_and_deploy_openapi_spec(tag):
+def generate_and_deploy_openapi_spec(tag, deploy=False):
     if tag == 'fastapi' and sys.version_info < (3, 0):
         print('fastapi requires python 3')
         return
@@ -198,10 +198,16 @@ def generate_and_deploy_openapi_spec(tag):
         'deploy/openapi/generated/{}.yaml'.format(tag), '-o',
         'deploy/openapi/overrides/{}.yaml'.format(tag), '-p',
         'deploy/openapi/output']
-    deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
-        'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
-    # deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
-    #     'deploy/openapi/output/{}.yaml'.format(tag)]
+    if deploy:
+        deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
+            'deploy/openapi/output/{}.yaml'.format(tag)]
+        # esp containers must be restared to pick up latest spec
+        esp_container = 'esp-{}'.format(tag)
+        stop_and_remove_container(esp_container)
+        run_container(esp_container)
+    else:
+        deploy_cmd = ['gcloud', 'endpoints', 'services', 'deploy',
+            'deploy/openapi/output/{}.yaml'.format(tag), '--validate-only']
     subprocess.check_call(generate_cmd)
     subprocess.check_call(deploy_cmd)
     try:
@@ -213,11 +219,15 @@ def generate_and_deploy_openapi_spec(tag):
         raise ae
 
 
-def build_and_run_container(container, tag):
-    compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache', container]
-    subprocess.check_output(compose_build_cmd)
-    for cont in [container, 'esp-{}'.format(tag)]:
-        compose_up_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'up', '-d', cont]
+def build_container(*containers):
+    for container in containers:
+        compose_build_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'build', '--no-cache', container]
+        subprocess.check_output(compose_build_cmd)
+
+
+def run_container(*containers):
+    for container in containers:
+        compose_up_cmd = ['docker-compose', '-f', COMPOSE_CONF, 'up', '-d', container]
         subprocess.check_output(compose_up_cmd)
 
 
@@ -248,7 +258,8 @@ def test_falcon_e2e():
 def run_e2e_suite(container, unsecured_port, secured_port):
     print('Testing: ' + container)
     tag = container.split('-')[-1]
-    build_and_run_container(container, tag)
+    build_container(container)
+    run_container(container, 'esp-{}'.format(tag))
     generate_and_deploy_openapi_spec(tag)
     time.sleep(8)
     unsecured_requests(unsecured_port)
@@ -256,11 +267,11 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     deathnut_basics(secured_port)
     list_endpoint(secured_port)
     revoke_all(secured_port)
-    #stop_and_remove_container(container, 'esp-{}'.format(tag))
+    stop_and_remove_container(container, 'esp-{}'.format(tag))
 
-#atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
+atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":
-    #test_apispec_e2e()
+    test_apispec_e2e()
     test_restplus_e2e()
-    #test_fastapi_e2e()
-    #test_falcon_e2e()
+    test_fastapi_e2e()
+    test_falcon_e2e()

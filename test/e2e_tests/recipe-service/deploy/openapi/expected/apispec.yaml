@@ -76,6 +76,21 @@ paths:
           schema:
             $ref: '#/definitions/DeathnutAuth'
   /recipe:
+    get:
+      operationId: get_recipe
+      parameters:
+      - description: optional limit
+        in: query
+        name: limit
+        required: false
+        type: integer
+      responses:
+        default:
+          description: ''
+          schema:
+            items:
+              $ref: '#/definitions/Recipe'
+            type: array
     post:
       operationId: post_recipe
       parameters:
