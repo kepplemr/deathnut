@@ -153,16 +153,10 @@ def list_endpoint(port):
     michael_jwt = generate_jwt("michael")
     recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt)
     orig_recipes_length = len(recipes_response.json())
-    print('Recipes response -> ' + str(recipes_response.text))
-    print('Recipes response length -> ' + str(orig_recipes_length))
-    # michael creates, edits, and gets a new recipe
     recipe = {"title": "Enchiladas", "ingredients": ["tortilla", "cheese"]}
-    enchiladas_id = json.loads(make_jwt_request(requests.post,"http://localhost:{}/recipe".format(port), michael_jwt, recipe).text)["id"]
-    print('Enchiladas id -> ' + str(enchiladas_id))
+    make_jwt_request(requests.post,"http://localhost:{}/recipe".format(port), michael_jwt, recipe)
     recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt)
     new_recipes_length = len(recipes_response.json())
-    print('Recipes response -> ' + str(recipes_response.text))
-    print('Recipes response length -> ' + str(len(recipes_response.json())))
     assert new_recipes_length == (orig_recipes_length + 1)
 
 
@@ -268,6 +262,7 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     list_endpoint(secured_port)
     revoke_all(secured_port)
     stop_and_remove_container(container, 'esp-{}'.format(tag))
+
 
 atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":

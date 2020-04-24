@@ -1,6 +1,7 @@
 *.pyc
 *.json
 *.egg-info/
+test/e2e_tests/recipe-service/generate_openapi
 test/e2e_tests/recipe-service/deploy/openapi/generated/*.yaml
 test/e2e_tests/recipe-service/deploy/openapi/output/*.yaml
 .tox/
