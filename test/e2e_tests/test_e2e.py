@@ -35,7 +35,7 @@ def generate_jwt(user, sa_keyfile="{}/recipe-service/keys/jwt-test.json".format(
         "aud": audience,
         # sub must be sa_email or JWT validation fails (it becomes id?)
         "sub": sa_email,
-        "email": user,
+        "user_id": user
     }
     # firebase handles signing our real clients
     signer = google.auth.crypt.RSASigner.from_service_account_file(sa_keyfile)
@@ -169,7 +169,8 @@ def revoke_all(port):
             auth_grant = {"id": revoke_id, "requires": "own", "grants": ["view", "edit", "own"], "user": user, "revoke": True}
             make_jwt_request(requests.post, "http://localhost:{}/auth-recipe".format(port), michael_jwt, auth_grant)
     for user in ['kim', 'jennifer', 'michael']:
-        recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), michael_jwt)
+        curr_jwt = generate_jwt(user)
+        recipes_response = make_jwt_request(requests.get, "http://localhost:{}/recipe".format(port), curr_jwt)
         assert len(recipes_response.json()) == 0
 
 
