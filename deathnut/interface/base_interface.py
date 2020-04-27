@@ -43,6 +43,11 @@ class BaseAuthorizationInterface(ABC):
     def get_dont_wait(*args, **kwargs):
         pass
 
+    @staticmethod
+    @abstractmethod
+    def get_body_response(ret, *args, **kwargs):
+        pass
+
     @abstractmethod
     def create_auth_endpoint(self, name, requires_role, grants_role):
         pass
@@ -73,7 +78,7 @@ class BaseAuthorizationInterface(ABC):
             return wrapped
         return decorator
 
-    def authentication_required(self, **kwargs):
+    def authentication_required(self, assign=[], uid_field="id", **kwargs):
         """
         If enabled is False, does nothing.
         If enabled and not strict, does nothing when called by an unauthenticated user.
@@ -85,7 +90,16 @@ class BaseAuthorizationInterface(ABC):
             def wrapped(*args, **kwargs):
                 jwt_header = self.get_auth_header(*args, **kwargs)
                 user, enabled, strict = self._get_auth_arguments(jwt_header, **kwargs)
-                return self._execute_if_authenticated(user, enabled, strict, func, *args, **kwargs)
+                if assign:
+                    ret = self._execute_if_authenticated(user, enabled, strict, func, *args, **kwargs)
+                    resp = self.get_body_response(ret, *args, **kwargs)
+                    uid = resp.get(uid_field)
+                    if not uid:
+                        raise DeathnutException("UID field <%s> not found in response <%s>" % (uid_field, resp))
+                    self.assign_roles(uid, assign, deathnut_user=user, **kwargs)
+                    return ret
+                else:
+                    return self._execute_if_authenticated(user, enabled, strict, func, *args, **kwargs)
             return wrapped
         return decorator
 

@@ -26,12 +26,11 @@ async def get_recipe(id: str, request: Request):
     return recipe_db[id]
 
 @app.post("/recipe", response_model=RecipeWithId)
-@auth_o.authentication_required()
+@auth_o.authentication_required(assign=["own", "edit", "view"])
 async def create_recipe(recipe: Recipe, request: Request):
     new_id = str(uuid.uuid4())
     new_recipe = {"id": new_id, "title": recipe.title, "ingredients": recipe.ingredients}
     recipe_db[new_id] = new_recipe
-    auth_o.assign_roles(new_id, ["own", "edit", "view"], request=request)
     return new_recipe
 
 @app.get("/recipe", response_model=List[RecipeWithId])

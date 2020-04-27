@@ -23,5 +23,9 @@ class FlaskAuthorization(BaseAuthorizationInterface, ABC):
         return dn_args[id_identifier]
 
     @staticmethod
+    def get_body_response(ret, *args, **kwargs):
+        return ret[0]
+
+    @staticmethod
     def get_dont_wait(*args, **kwargs):
         return kwargs.get('dont_wait', request.method == 'GET')

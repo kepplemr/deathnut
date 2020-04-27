@@ -32,6 +32,9 @@ class TestInterface(BaseAuthorizationInterface):
     def get_auth_header(*args, **kwargs):
         pass
     @staticmethod
+    def get_body_response(ret, *args, **kwargs):
+        pass
+    @staticmethod
     def get_resource_id(id_identifier, *args, **kwargs):
         pass
     @staticmethod

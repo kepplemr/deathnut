@@ -30,6 +30,10 @@ class FastapiAuthorization(BaseAuthorizationInterface):
         return asyncio.run(dn_func(*args, request=request, **kwargs))
 
     @staticmethod
+    def get_body_response(ret, *args, **kwargs):
+        return ret
+
+    @staticmethod
     def get_auth_header(request, *args, **kwargs):
         return request.headers.get('X-Endpoint-Api-Userinfo', '')
 

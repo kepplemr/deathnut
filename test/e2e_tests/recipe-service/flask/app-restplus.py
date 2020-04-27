@@ -34,7 +34,7 @@ auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 class RecipeCreate(Resource):
     @ns.expect(recipe_schema, validate=True)
     @ns.marshal_with(recipe_with_id)
-    @auth_o.authentication_required()
+    @auth_o.authentication_required(assign=["own", "edit", "view"])
     def post(self, **kwargs):
         recipe = request.json
         new_id = str(uuid.uuid4())
@@ -44,7 +44,6 @@ class RecipeCreate(Resource):
             "ingredients": recipe["ingredients"],
         }
         recipe_db[new_id] = new_recipe
-        auth_o.assign_roles(new_id, ["own", "edit", "view"], **kwargs)
         return new_recipe, 200
 
     @api.doc(params={'limit': {'description': 'optional limit', 'in': 'query', 'type': 'integer', 'required': False}})

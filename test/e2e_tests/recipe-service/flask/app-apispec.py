@@ -29,12 +29,11 @@ def get(id, **kwargs):
 @app.route("/recipe", methods=("POST",))
 @use_kwargs(RecipeSchema, required=True, locations=("json",))
 @marshal_with(RecipeSchema)
-@auth_o.authentication_required()
+@auth_o.authentication_required(assign=["own", "edit", "view"])
 def post(title, ingredients, **kwargs):
     new_id = str(uuid.uuid4())
     new_recipe = {"id": new_id, "title": title, "ingredients": ingredients}
     recipe_db[new_id] = new_recipe
-    auth_o.assign_roles(new_id, ["own", "edit", "view"], **kwargs)
     return new_recipe, 200
 
 @app.route("/recipe", methods=("GET",))
@@ -55,7 +54,6 @@ def patch(id, **kwargs):
 
 @generate_openapi_template
 def create_app():
-    #app.config['APISPEC_SWAGGER_URL'] = '/wtf.json'
     FlaskApiSpec(app).register_existing_resources()
     return app
 

@@ -35,7 +35,7 @@ auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'ow
 auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
 
 class RecipeBase:
-    @auth_o.authentication_required()
+    @auth_o.authentication_required(assign=['own','edit','view'])
     def on_post(self, req, resp, **kwargs):
         """
         Recipe POST endpoint
@@ -59,7 +59,6 @@ class RecipeBase:
             "ingredients": recipe["ingredients"],
         }
         recipe_db[new_id] = new_recipe
-        auth_o.assign_roles(new_id, ['own','edit','view'], **kwargs)
         resp.media = new_recipe
         resp.status = falcon.HTTP_200
 
@@ -137,8 +136,7 @@ spec.components.schema("RecipeWithId", schema=RecipeWithId)
 spec.components.schema("RecipePartial", schema=RecipePartial)
 spec.path(resource=recipe_resource)
 spec.path(resource=recipe_create_and_list)
-logger.warn("App type -> " + str(type(app)))
-print("Spec -> \n" + str(spec.to_yaml()))
+#spec.to_yaml()
 
 if __name__ == "__main__":
     httpd = simple_server.make_server("0.0.0.0", 80, app)

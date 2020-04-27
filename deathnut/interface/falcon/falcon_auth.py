@@ -27,6 +27,10 @@ class FalconAuthorization(BaseAuthorizationInterface):
         return req.get_header("X-Endpoint-Api-Userinfo", default="")
 
     @staticmethod
+    def get_body_response(ret, *args, **kwargs):
+        return args[2].media
+
+    @staticmethod
     def get_resource_id(id_identifier, *args, **kwargs):
         req = args[1]
         dn_args = req.media or {}
