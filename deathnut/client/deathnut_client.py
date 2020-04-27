@@ -55,7 +55,7 @@ class DeathnutClient(object):
         In real redis, page_size is just a suggestion. If a value less than hash-max-ziplist-entries
         is provided, it will be ignored. See https://redis.io/commands/scan.
         """
-        cursor = "0"
+        cursor = '0'
         while cursor != 0:
             cursor, data = self._client.hscan("{}:{}:{}".format(self._name, user, role),
                 cursor=cursor, count=page_size)

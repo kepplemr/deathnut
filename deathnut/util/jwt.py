@@ -10,5 +10,5 @@ def get_user_from_jwt_header(jwt_header):
     user = "Unauthenticated"
     if jwt_header:
         decoded_token = json.loads(base64.b64decode(jwt_header))
-        user = decoded_token.get("user_id", json.loads(decoded_token['claims'])['user_id'])
+        user = decoded_token.get("user_id") or json.loads(decoded_token['claims'])['user_id']
     return user
