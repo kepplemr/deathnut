@@ -92,7 +92,7 @@ class BaseAuthorizationInterface(ABC):
                 user, enabled, strict = self._get_auth_arguments(jwt_header, **kwargs)
                 if assign:
                     ret = self._execute_if_authenticated(user, enabled, strict, func, *args, **kwargs)
-                    resp = self.get_body_response(ret, *args, **kwargs)
+                    resp = dict(self.get_body_response(ret, *args, **kwargs))
                     uid = resp.get(uid_field)
                     if not uid:
                         raise DeathnutException("UID field <%s> not found in response <%s>" % (uid_field, resp))
