@@ -24,7 +24,6 @@ class FastapiAuthorization(BaseAuthorizationInterface):
 
     @staticmethod
     def _execute(dn_func, request, *args, **kwargs):
-        request.deathnut_calling_user = kwargs.pop('deathnut_calling_user', 'Unauthenticated')
         request.deathnut_user = kwargs.pop('deathnut_user', 'Unauthenticated')
         request.deathnut_ids = kwargs.pop('deathnut_ids', [])
         return asyncio.run(dn_func(*args, request=request, **kwargs))
@@ -44,12 +43,11 @@ class FastapiAuthorization(BaseAuthorizationInterface):
 
     def _execute_asynchronously(self, dn_func, dn_role, dn_rid, request, *args, **kwargs):
         loop = asyncio.new_event_loop()
-        request.deathnut_calling_user = kwargs.pop('deathnut_calling_user', 'Unauthenticated')
         request.deathnut_user = kwargs.pop('deathnut_user', 'Unauthenticated')
         asyncio.set_event_loop(loop)
         results = loop.run_until_complete(asyncio.gather(loop.run_in_executor(None,
                                           functools.partial(self.is_authorized,
-                                          request.deathnut_calling_user, dn_role, dn_rid)),
+                                                            request.deathnut_user,dn_role, dn_rid)),
                                           dn_func(*args, request=request, **kwargs)))
         if results[0]:
             return results[1]
@@ -62,16 +60,14 @@ class FastapiAuthorization(BaseAuthorizationInterface):
 
     def assign_roles(self, resource_id, roles, **kwargs):
         request = kwargs.get('request')
-        dn_calling_user = kwargs.get('deathnut_calling_user', getattr(request, 'deathnut_calling_user', 'Unauthenticated'))
         dn_user = kwargs.get('deathnut_user', getattr(request, 'deathnut_user', 'Unauthenticated'))
         return super(FastapiAuthorization, self)._change_roles(self._client.assign_role, roles, resource_id,
-            deathnut_calling_user=dn_calling_user, deathnut_user=dn_user)
+            deathnut_user=dn_user)
 
     def revoke_roles(self, resource_id, roles, **kwargs):
-        dn_calling_user = kwargs.get('deathnut_calling_user', kwargs['request'].deathnut_calling_user)
         dn_user = kwargs.get('deathnut_user', kwargs['request'].deathnut_user)
         return super(FastapiAuthorization, self)._change_roles(self._client.revoke_role, roles, resource_id,
-            deathnut_calling_user=dn_calling_user, deathnut_user=dn_user)
+            deathnut_user=dn_user)
 
     def create_auth_endpoint(self, name):
         """

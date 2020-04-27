@@ -55,7 +55,7 @@ class TestRestDeathnutClient(unittest.TestCase):
         random_resource_id = str(uuid.uuid4())
         self.assertRaises(DeathnutException, auth_o._execute_if_authorized, "test_user", "own",
             random_resource_id, True, True, False, execute_me_on_success)
-        auth_o.assign_roles(random_resource_id, ["own"], deathnut_calling_user="test_user", deathnut_user="test_user")
+        auth_o.assign_roles(random_resource_id, ["own"], deathnut_user="test_user")
         self.assertTrue(auth_o._execute_if_authorized("test_user", "own", random_resource_id, True,
             True, False, execute_me_on_success))
 

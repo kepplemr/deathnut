@@ -178,11 +178,9 @@ class BaseAuthorizationInterface(ABC):
             return self._execute(dn_func, *args, **kwargs)
         if dn_dont_wait:
             return self._execute_asynchronously(dn_func, dn_role, dn_rid, *args,
-                                                deathnut_calling_user=dn_user,
                                                 deathnut_user=dn_user, **kwargs)
         if self.is_authorized(dn_user, dn_role, dn_rid):
-            return self._execute(dn_func, *args, deathnut_calling_user=dn_user,
-                                 deathnut_user=dn_user, **kwargs)
+            return self._execute(dn_func, *args, deathnut_user=dn_user, **kwargs)
         raise DeathnutException("Not authorized")
 
 
@@ -192,7 +190,7 @@ class BaseAuthorizationInterface(ABC):
 
 
     def _execute_asynchronously(self, dn_func, dn_role, dn_rid, *args, **kwargs):
-        dn_user = kwargs.get('deathnut_calling_user', 'Unauthenticated')
+        dn_user = kwargs.get('deathnut_user', 'Unauthenticated')
         with ThreadPoolExecutor() as ex:
             # assigns should not occur on GET / will not succeed as we dont pass user info
             fetched_result = ex.submit(dn_func, *args, **kwargs)
@@ -224,6 +222,5 @@ class BaseAuthorizationInterface(ABC):
         if not self._is_auth_required(dn_user, dn_enabled, dn_strict):
             return self._execute(dn_func, *args, **kwargs)
         if self.is_authenticated(dn_user):
-            return self._execute(dn_func, *args, deathnut_calling_user=dn_user,
-                                 deathnut_user=dn_user, **kwargs)
+            return self._execute(dn_func, *args, deathnut_user=dn_user, **kwargs)
         raise DeathnutException("No authentication provided")
