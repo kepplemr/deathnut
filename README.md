@@ -57,7 +57,7 @@ If the initial user 'user1' wants to grant their friend 'user2' access to view a
 they would initiate a call to /auth-recipe containing:
 
 ```json
-{"id": recipe_id, "requires": "own", "grants": ["view", "edit"], "user": user2_id}
+{"id": "${recipe_id}", "requires": "own", "grants": ["view", "edit"], "user": "${user2_id}"}
 ```
 The data payload indicates user1 (determined via JWT token) wants to use their 'own' privilege to 
 grant ['edit', 'view'] to user2. 
@@ -66,17 +66,18 @@ Deathnut will:
 1) verify that the authenticated user (user1) has the 'own' privilege.
 2) the 'own' privilege has been granted the ability to assign both 'edit' and 'view'
 
-Any privilege that can grant a role can also revoke one.
+Further, any privilege that can grant a role can also revoke one.
 
 Should user1 and user2 have a falling out, user1 can revoke user2's 'edit' and 'view' access with
-a quite similar call to /auth-recipe:
+a very similar call to /auth-recipe:
 
 ```json
-{"id": recipe_id, "requires": "own", "grants": ["view", "edit"], "user": user2_id, "revoke": True}
+{"id": "${recipe_id}", "requires": "own", "grants": ["view", "edit"], "user": "${user2_id}", "revoke": true}
 ```
 
 An obvious byproduct of this ability is that should user1 have granted user2 **all** privileges
-('view', 'edit' and 'own'), user2 is capable of revoking all of user1's access. 
+('view', 'edit' and 'own'), user2 is capable of revoking all of user1's access, locking them out of
+their own created recipe!
 
 To avoid such situations, services should likely follow the pattern below of granting the initial
 creator an extra privilege ('own') that they need not share to grant others full access to view/edit
@@ -90,7 +91,6 @@ auth_o = FastapiAuthorization(app, service="example", resource_type="recipe",
 auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
 auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'own'])
 auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
-logger = get_deathnut_logger(__name__)
 recipe_db = dict()
 
 @app.get("/recipe/{id}", response_model=RecipeWithId)
