@@ -16,7 +16,7 @@ Services can add authorization support by defining a list of privileges -- e.g.,
 
 # contents
 1. [deathnut overview](#deathnut-overview)
-2. [design points of emphases](#design%20points%20of%emphasis)
+2. [design points of emphases](#design%20points%20of%20emphasis)
 3. [example service](#example%20service)
     - [detailed example - fastapi](docs/fastapi.md)
     - [detailed example - flask-apispec](docs/apispec.md)
