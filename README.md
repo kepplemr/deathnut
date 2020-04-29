@@ -1,18 +1,13 @@
 # deathnut overview
 
 Deathnut is an extremely simple, easy-to-use, and blazing fast authorization library. It supports
-several pyton REST tools (Flask, Falcon, Fastapi) and uses redis for data storage.
+several python REST tools (Flask, Falcon, Fastapi) and uses redis for data storage.
 
 Endpoint decorators are provided for each REST tool so that services need not add heaps of 
 authorization logic themselves. Instead, introducing a one-line decorator around endpoints can 
 handle all common use cases while basic authz requirements can be understood at a glance. 
 Additionally, a "lower level" deathnut client is available for unique cases or easy investigation of
 authorization status. 
-
-
-Services can add authorization support by defining a list of privileges -- e.g., ['view', 'edit',
-'own'] and denoting endpoints that assign or require said privileges.
-
 
 # contents
 1. [deathnut overview](#deathnut-overview)
@@ -41,7 +36,7 @@ revoke a role. There are no restrictions on the number or naming of roles that a
 that is entirely up to the service. In most examples we'll use ['view', 'edit', 'own'] for 
 privileges but these could just as easily be ['serf', 'peasant', 'knight', 'king']. 
 
-Deathnut does not handle authentication of users. It relies on the pod EDP sidecar(s) to verify the
+Deathnut does not handle authentication of users. It relies on the pod ESP sidecar(s) to verify the
 signage of JWT tokens received from cloud endpoints. When ESP does this successfully, it attaches a
 'X-Endpoint-Api-Userinfo' header with user information deathnut trusts entirely for AuthZ. Other
 headers/auth support could be added, but this header is currently all that is supported. 
@@ -58,8 +53,8 @@ update resournces, the expected performance hit for adding deathnut will be arou
 most common operations (GETs), deathnut is even faster.** We achieve additional speed on GETs by
 not waiting for authorization OK before executing the called endpoint. In another thread (start time
  < 1 millisecond) we then check the user's authorization for the resource. If authorized,
-we'll return the result we get back from the endpoint. If not, we'll return the normal 401. Deathnut
-will not, by any perceptible measure, slow your service. 
+we'll return the result we get back from the endpoint. If not, we'll return the normal 401. *Deathnut
+will not, by any remotely perceptible measure, slow your service.*
 
 # example service
 
