@@ -15,10 +15,20 @@ Services can add authorization support by defining a list of privileges -- e.g.,
 
 
 # contents
-[TOC]
-- [Deathnut overview](#deathnut-overview)
-- [Redis overview](docs/redis.md)
-- [Pre-commit setup](#pre-commit-setup)
+1. [deathnut overview](#deathnut-overview)
+2. [design points of emphases](#design%20points%20of%emphasis)
+3. [example service](#example%20service)
+    - [detailed example - fastapi](docs/fastapi.md)
+    - [detailed example - flask-apispec](docs/apispec.md)
+    - [detailed example - flask-restplus](docs/restplus.md)
+    - [detailed example - falcon](docs/falcon.md)
+4. [lower-level client](#client%20overview)
+5. [redis overview](docs/redis.md)
+    - [detailed redis walkthrough](docs/redis.md)
+6. [authentication overview](#authentication%20overview)
+    - [example cloud endpoints test script](docs/example-e2e.md)
+7. [deathnut deployment](#deathnut%20deployment)
+8. [pre-commit setup](#pre-commit-setup)
 
 # design points of emphasis
 
@@ -118,6 +128,18 @@ async def patch_recipe(id: str, recipe: PartialRecipe, request: Request):
         recipe_db[id][update] = getattr(recipe, update)
     return recipe_db[id]
 ```
+# redis overview
+
+lorem whatever.
+
+# authentication overview
+
+blah blah
+
+# deathnut deployment
+
+blah blah
 
 # pre-commit setup
+
 1) brew install pre-commit
