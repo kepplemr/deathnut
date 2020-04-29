@@ -16,13 +16,13 @@ Services can add authorization support by defining a list of privileges -- e.g.,
 
 # contents
 1. [deathnut overview](#deathnut-overview)
-2. [design points of emphases](#design-points-of-emphasis)
+2. [main concepts](#main-concepts)
 3. [example service](#example-service)
     - [detailed example - fastapi](docs/fastapi.md)
     - [detailed example - flask-apispec](docs/apispec.md)
     - [detailed example - flask-restplus](docs/restplus.md)
     - [detailed example - falcon](docs/falcon.md)
-4. [lower-level client](#client-overview)
+4. [lower-level client](#lower-level-client)
 5. [redis overview](docs/redis.md)
     - [detailed redis walkthrough](docs/redis.md)
 6. [authentication overview](#authentication-overview)
@@ -30,12 +30,36 @@ Services can add authorization support by defining a list of privileges -- e.g.,
 7. [deathnut deployment](#deathnut-deployment)
 8. [pre-commit setup](#pre-commit-setup)
 
-# design points of emphasis
+# main concepts
 
-- be fast
-- be simple to add and simple to understand
-- do not slow the majority of traffic (GETs) at all
-- support enabling authorization checks in phases
+Deathnut is not a service. Deathnut is a library/tool that services can use to handle their own
+authorization logic. 
+
+It encapsulates logic to talk to redis and assign/retrieve stored user authorization information.
+For a given user and resource_id, a service with deathnut can: assign a role, check a role, and 
+revoke a role. There are no restrictions on the number or naming of roles that a service can use;
+that is entirely up to the service. In most examples we'll use ['view', 'edit', 'own'] for 
+privileges but these could just as easily be ['serf', 'peasant', 'knight', 'king']. 
+
+Deathnut does not handle authentication of users. It relies on the pod EDP sidecar(s) to verify the
+signage of JWT tokens received from cloud endpoints. When ESP does this successfully, it attaches a
+'X-Endpoint-Api-Userinfo' header with user information deathnut trusts entirely for AuthZ. Other
+headers/auth support could be added, but this header is currently all that is supported. 
+
+In addition to the one-line decorators to surround endpoints with authorization requirements/etc,
+deathnut interfaces also provide the ability to add **auth endpoints**. Auth endpoints are easy ways 
+to define which user privileges can grant/revoke from others, and provides an endpoint to entirely 
+handle this. Again, ensuring services do not get bogged down implementing their own authorization 
+solutions. 
+
+Performance is a central concern. Intra-datacenter calls to redis are extremely fast: for the most
+common 'hget' operation the round-trip response time is about 5ms. For operations that create or 
+update resournces, the expected performance hit for adding deathnut will be around this. **For the
+most common operations (GETs), deathnut is even faster.** We achieve additional speed on GETs by
+not waiting for authorization OK before executing the called endpoint. In another thread (start time
+ < 1 millisecond) we then check the user's authorization for the resource. If authorized,
+we'll return the result we get back from the endpoint. If not, we'll return the normal 401. Deathnut
+will not, by any perceptible measure, slow your service. 
 
 # example service
 
