@@ -42,7 +42,7 @@ creator can view.
 creator can update.
 4) By calling GET on /recipe, users will receive a list of all recipes they have 'view' access to.
 
-Towards the top, we also create an auth endpoint which allows for easy handling of user-initiated
+Towards the top, we also create an **auth endpoint** which allows for easy handling of user-initiated
 sharing and revocation of access. The endpoint is added to the service (and OpenAPI specs) at 
 /auth-recipe. Any number of auth endpoints can be defined, but one per service should handle most 
 use cases.
@@ -53,11 +53,40 @@ Here a role of 'own' can grant 'view', 'edit', and 'own'. A role of 'edit' can g
 As the initial creator is assigned all privileges (own, edit, view), they are capable of granting
 a friend whatever access the friend would want. 
 
+If the initial user 'user1' wants to grant their friend 'user2' access to view and edit the recipe,
+they would initiate a call to /auth-recipe containing:
+
+```json
+{"id": recipe_id, "requires": "own", "grants": ["view", "edit"], "user": user2_id}
+```
+The data payload indicates user1 (determined via JWT token) wants to use their 'own' privilege to 
+grant ['edit', 'view'] to user2. 
+
+Deathnut will:
+1) verify that the authenticated user (user1) has the 'own' privilege.
+2) the 'own' privilege has been granted the ability to assign both 'edit' and 'view'
+
+Any privilege that can grant a role can also revoke one.
+
+Should user1 and user2 have a falling out, user1 can revoke user2's 'edit' and 'view' access with
+a quite similar call to /auth-recipe:
+
+```json
+{"id": recipe_id, "requires": "own", "grants": ["view", "edit"], "user": user2_id, "revoke": True}
+```
+
+An obvious byproduct of this ability is that should user1 have granted user2 **all** privileges
+('view', 'edit' and 'own'), user2 is capable of revoking all of user1's access. 
+
+To avoid such situations, services should likely follow the pattern below of granting the initial
+creator an extra privilege ('own') that they need not share to grant others full access to view/edit
+their created recipe. 
 
 ```python
 app = FastAPI()
 redis_conn = redis.Redis(host="redis", port=6379)
-auth_o = FastapiAuthorization(app, service="example", resource_type="recipe", redis_connection=redis_conn, enabled=True, strict=False)
+auth_o = FastapiAuthorization(app, service="example", resource_type="recipe", 
+    redis_connection=redis_conn, enabled=True, strict=False)
 auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
 auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'own'])
 auth_endpoint.allow_grant(requires_role='edit', grants_roles=['view'])
