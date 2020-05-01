@@ -150,9 +150,9 @@ async def patch_recipe(id: str, recipe: PartialRecipe, request: Request):
 
 For a full E2E example of the deathnut Fastapi interface, see the example app [here](test/e2e_tests/recipe-service/fastapi/app.py).
 
-For full examples of the other interface:
-[flask-apispec](test/e2e_tests/recipe-service/flask/app-apispec.py)
-[flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)
+For full examples of the other interface:\
+[flask-apispec](test/e2e_tests/recipe-service/flask/app-apispec.py)\
+[flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)\
 [falcon](test/e2e_tests/recipe-service/falcon/app.py)
 
 # interface magic
