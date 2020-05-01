@@ -17,7 +17,7 @@ level" deathnut client is available for unique cases or easy investigation of au
     - [e2e example - flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)
     - [e2e example - falcon](test/e2e_tests/recipe-service/falcon/app.py)
 4. [interface magic](#interface-magic)
-5. [strict & enabled](#strict-&-enabled)
+5. [strict & enabled](#strict-&amp;-enabled)
 6. [lower-level client](#lower-level-client)
 7. [redis overview](#redis-overview)
     - [detailed redis walkthrough](docs/redis.md)
