@@ -6,7 +6,6 @@ Tests time and space performance of redis data strategies for:
 4) Get ids for user, role
 """
 import functools
-import itertools
 import time
 import uuid
 
@@ -82,15 +81,7 @@ class HashImplementation(BaseImplementation):
             self.redis_client.hdel("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION), r_id)
     @time_me
     def get_ids_for_user_and_role(self, limit):
-        return list(itertools.chain.from_iterable(self.get_ids(limit)))
-    def get_ids(self, page_size=10):
         return self.redis_client.hgetall("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION))
-        # cursor = "0"
-        # while cursor != 0:
-        #     cursor, data = self.redis_client.hscan("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION),
-        #         cursor=cursor, count=page_size)
-        #     yield [x[0].decode() for x in data.items()]
-
 class SetImplementation(BaseImplementation):
     def __init__(self):
         super(SetImplementation, self).__init__()
@@ -129,5 +120,3 @@ for strat in [SetImplementation, HashImplementation]:
         print('Average check time for size {}: {}'.format(test_size, (check_time / TEST_RUNS_PER_SIZE)))
         print('Average get_ids time for size {}: {}'.format(test_size, (get_ids_time / TEST_RUNS_PER_SIZE)))
         print('Average remove time for size {}: {}\n'.format(test_size, (remove_time / TEST_RUNS_PER_SIZE)))
-# view_resources = list(itertools.chain.from_iterable(get_resources(redis_client, USER, 'view')))
-# scan 0 match dimsum_edited-recipes:michael:*
