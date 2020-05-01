@@ -12,12 +12,12 @@ level" deathnut client is available for unique cases or easy investigation of au
 1. [deathnut overview](#deathnut-overview)
 2. [main concepts](#main-concepts)
 3. [example service](#example-service)
-    - [detailed example - fastapi](docs/fastapi.md)
-    - [detailed example - flask-apispec](docs/apispec.md)
-    - [detailed example - flask-restplus](docs/restplus.md)
-    - [detailed example - falcon](docs/falcon.md)
+    - [e2e example - fastapi](test/e2e_tests/recipe-service/fastapi/app.py)
+    - [e2e example - flask-apispec](test/e2e_tests/recipe-service/flask/app-apispec.py)
+    - [e2e example - flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)
+    - [e2e example - falcon](test/e2e_tests/recipe-service/falcon/app.py)
 4. [lower-level client](#lower-level-client)
-5. [redis overview](docs/redis.md)
+5. [redis overview](#redis-overview)
     - [detailed redis walkthrough](docs/redis.md)
 6. [authentication overview](#authentication-overview)
     - [example cloud endpoints test script](docs/example-e2e.md)
@@ -47,9 +47,9 @@ handle this. Again, ensuring services do not get bogged down implementing their 
 solutions.
 
 Performance is a central concern. Intra-datacenter calls to redis are extremely fast: for the most
-common 'hget' operation the round-trip response time is about 5ms. For operations that create or
-update resournces, the expected performance hit for adding deathnut will be around this. **For the
-most common operations (GETs), deathnut is even faster.** We achieve additional speed on GETs by
+common 'check role' operation the round-trip response time is about 5ms. For operations that create 
+or update resources, the expected performance hit for adding deathnut will be around this. **For 
+the most common operations (GETs), deathnut is even faster.** We achieve additional speed on GETs by
 not waiting for authorization OK before executing the called endpoint. In another thread (start time
  < 1 millisecond) we then check the user's authorization for the resource. If authorized,
 we'll return the result we get back from the endpoint. If not, we'll return the normal 401. *Deathnut
@@ -282,6 +282,8 @@ Each tool has a different way of pulling these headers, all must implement the a
 get_auth_header() method defined in the base interface.
 
 The actual extraction of user information from these headers is done [here](deathnut/util/jwt.py).
+
+For an example of how we test dimsum cloud endpoints E2E, see [here](https://github.com/cephalo-ai/dimsum/blob/master/tests/auth/ce_auth.py).
 
 
 # deathnut deployment
