@@ -20,7 +20,6 @@ level" deathnut client is available for unique cases or easy investigation of au
 5. [redis overview](#redis-overview)
     - [detailed redis walkthrough](docs/redis.md)
 6. [authentication overview](#authentication-overview)
-    - [example cloud endpoints test script](docs/example-e2e.md)
 7. [deathnut deployment](#deathnut-deployment)
 8. [pre-commit setup](#pre-commit-setup)
 
@@ -154,6 +153,10 @@ For full examples of the other interface:
 [flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)
 [falcon](test/e2e_tests/recipe-service/falcon/app.py)
 
+# interface magic
+
+TODO deathnut_user, deathnut_ids
+
 # lower level client
 
 The lower-level client is used by the various REST interfaces to perform the core deathnut
@@ -208,7 +211,18 @@ assert sorted(all_roles['view']) == ['0', '2']
 
 # redis overview
 
-See the detailed breakdown [here](docs/redis.md)
+redis is used as the backend data store for user roles -> resource_ids. redis was chosen because it
+is extremely fast, we're already using it, and GCP provides a managed, HA instance (Memorystore).
+
+Memorystore does now support [exporting db data](https://cloud.google.com/blog/products/databases/cloud-memorystore-adds-import-export-and-redis-4-0). Thus Deathnut backend redis data can be 
+periodically backed up to GCS in RDB format. This process should likely be managed by 
+composer/Airflow once or twice monthly.
+
+Should redis fill up, we want to return outage notifications to the user and log all access
+grants/etc to stackdriver. Logging to stackdriver would let us replay operations missed while redis
+was down, basically acting as a redis edit log.
+
+[For a detailed breakdown of deathnut's data model.](docs/redis.md)
 
 # authentication overview
 

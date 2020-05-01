@@ -1,8 +1,3 @@
-# redis overview
-
-redis is used as the backend data store for user roles -> resource_ids. redis was chosen because it
-is extremely fast, we're already using it, and GCP provides a managed, HA instance (Memorystore).
-
 # data model
 
 When designing deathnut, two approaches for redis id storage were considered: using redis sets and
@@ -67,9 +62,7 @@ The hashing approach should save some memory early on (when the k,v in a field a
 hash-max-ziplist number). Once the number of entries in a hash field exceeds hash-max-ziplist the 
 key-value pairs will be 'unzipped' to a regular hash. 
 
-From an analysis standpoint the approaches are nearly identical. Hash uses less memory when n is
-small but is slightly slower. Hash uses *more* memory once n exceeds the hash-max-ziplist setting
-(512 by default and in the testing below) but gets *faster* for 'checks' as n gets very large.
+A test script (see below) was created to evaluate the approaches as n grew in size.
 
 Hash vs Set when n = 10:\
 ![alt text](10.png)
@@ -83,17 +76,15 @@ Hash vs Set when n = 10,000:\
 Hash vs Set when n = 1,000,000:\
 ![alt text](1000000.png)
 
-The results (see test script and readout below) indicate that early on we'll save memory by using
-hash while sacrificing microscopic performance. Once n gets large, the approaches look largely
-identical with hash consistently being slightly faster for 'checks' (probably the thing we care most
-about) and about half as fast for 'get all ids for role'.
 
-## who cares about memory usage, which approach is faster?
+From an analysis standpoint the approaches are nearly identical. Hash uses less memory when n is
+small but is slightly slower. Hash uses *more* memory once n exceeds the hash-max-ziplist setting
+(512 by default and in the testing below) but gets *faster* for 'checks' as n gets very large.
+The only significant difference as n grows is the set approach performs about twice as fast for 
+'get all ids for role'.
 
-Fine. Scaling up memory is easy enough, what really matters is which one is faster. While the
-ziplist approach may increase cache locality, it is also not a truly O(1) lookup when the
+## the test script
 
-The test script:
 ```python
 """                                                                                                                                                                                                                
 Tests time and space performance of redis data strategies for:                                                                                                                                                     
@@ -205,7 +196,8 @@ for strat in [HashImplementation, SetImplementation]:
         print('Average remove time for size {}: {}\n'.format(test_size, (remove_time / TEST_RUNS_PER_SIZE)))
 ```
 
-The results:
+## the results
+
 ```json
 Current strategy:  <class 'main.HashImplementation'>
 Current size:  10
