@@ -15,9 +15,8 @@ import redis
 USER = "michael"
 SERVICE_NAME = "dimsum_edited-recipes"
 PERMISSION = "view"
-#TEST_SIZES = [10, 400, 10_000, 1_000_000]
-TEST_SIZES = [20_000]
-TEST_RUNS_PER_SIZE = 1
+TEST_SIZES = [10, 400, 10_000, 1_000_000]
+TEST_RUNS_PER_SIZE = 10
 
 docker_client = docker.from_env()
 for container in docker_client.containers.list(all=True):
@@ -31,8 +30,6 @@ def time_me(func):
     def timed(*args, **kwargs):
         t0 = time.time()
         func(*args, **kwargs)
-        # if ret:
-        #     print(str(ret))
         t1 = time.time()
         return t1 - t0
     return timed
@@ -42,19 +39,6 @@ def generate_ids(size):
     for i in range(size):
         results[i] = str(uuid.uuid4())
     return results
-
-def get_resources(redis_conn, user, role, page_size=10):
-    """
-    Note
-    ----
-    In real redis, page_size is just a suggestion. If a value less than hash-max-ziplist-entries
-    is provided, it will be ignored. See https://redis.io/commands/scan.
-    """
-    cursor = "0"
-    while cursor != 0:
-        cursor, data = redis_conn.hscan("{}:{}:{}".format(SERVICE_NAME, user, role),
-            cursor=cursor, count=page_size)
-        yield [x[0].decode() for x in data.items()]
 
 class BaseImplementation(object):
     def __init__(self):
