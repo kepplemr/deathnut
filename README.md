@@ -197,19 +197,69 @@ assert sorted(all_roles['own']) == ['0', '1', '10', '11', '12', '2', '3', '4', '
 assert sorted(all_roles['view']) == ['0', '2']
 ```
 
-Note: get_roles(user) is for debugging and should not be used in prod endpoints.
+**Note: get_roles(user) is for debugging and should not be used in prod endpoints.**
 
 # redis overview
 
-lorem whatever.
+See the detailed breakdown [here](docs/redis.md)
 
 # authentication overview
 
-blah blah
+The low-level deathnut client's job is to encapsulate our communicaiton with redis; it accepts
+any string value for a username.
+
+As for the REST interfaces, currently only auth information passed from ESP via the
+'X-Endpoint-Api-Userinfo' header is supported. 
+
+```python
+import json
+import os
+import firebase_admin
+import requests
+from firebase_admin import auth, credentials
+
+# make sure service account has 'firebaseauth.users.[create,get]'
+SERVICE_ACCOUNT_KEY_LOCATION = 'devops/keys/fenschmecker-int.json'
+# make sure the key used has 'Identity Toolkit API' access. Or sign in with email/pw.
+FIREBASE_WEB_API_KEY = os.environ.get('FS_INT_APIKEY')
+PROJECT_ID = 'wellio-integration'
+DIMSUM_CE_URL = 'https://dimsum-jwt.endpoints.wellio-integration.cloud.goog'
+EDITED_RECIPES_PATH = 'api/edited_recipes'
+AUTH_ENDPOINT_PATH = 'auth-recipe'
+
+def get_id_token_for_user_email(email):
+    user_id = auth.get_user_by_email(email).uid
+    user_custom_token = auth.create_custom_token(user_id).decode()
+    idtk_url = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithCustomToken?key='
+    payload = {"token": user_custom_token, "returnSecureToken": True}
+    return user_id, requests.post(''.join([idtk_url, FIREBASE_WEB_API_KEY]), data=payload).json().get('idToken')
+
+def make_jwt_request(method, url, signed_jwt, data=None, extra_header=None):
+    headers = {"Authorization": "Bearer {}".format(signed_jwt),
+        "content-type": "application/json"}
+    if extra_header:
+        headers.update(extra_header)
+    if method == requests.get:
+        response = method(url, headers=headers)
+    else:
+        response = method(url, headers=headers, data=json.dumps(data))
+    print(str(response.text))
+    return response
+
+firebase_admin.initialize_app(credentials.Certificate(SERVICE_ACCOUNT_KEY_LOCATION))
+m_id, m_jwt = get_id_token_for_user_email('michael@test.com')
+get_response = make_jwt_request(requests.get, edited_recipe_url, m_jwt)
+```
+
+Each tool has a different way of pulling these headers.
+
 
 # deathnut deployment
 
-blah blah
+On successful build of mfaster, the deathnut 'pip zip' is deployed to GCS @
+https://console.cloud.google.com/storage/browser/dist.getwellio.com/projects/deathnut/master
+
+When making changes to deathnut, bump the version [here](setup.py#L5)
 
 # pre-commit setup
 
