@@ -52,4 +52,17 @@ redis:6379> HGET dimsum_edited-recipes:jennifer:view 85a9082e-e5c8-454c-b020-ac1
 ## so why hashes over sets
 
 In [redis docs on memory optimization](https://redis.io/topics/memory-optimization) they encourage
-using hashes "when possible." 
+using hashes "when possible." The documentation there is excellent for a full overview of what's
+going on, but suffice to say using hashes allows redis to store the hash values more efficiently in
+memory (as a ziplist up to a certain threshold) as well as take advantage of cache locality
+benefits. 
+
+The drawbacks of using a hash approach over sets are that we cannot assign TTLs to hash fields and
+the keys and values can only be strings. Lack of TTL is not a concern for us because we *never*
+want these keys to expire. That the keys and values must be strings is also not a limiting concern 
+as for the user object, keys should always be uuids (strings) and all we care about is whether they
+are set or not, which we can represent perfectly well with a "T".
+
+## who cares about memory usage, which approach is faster?
+
+Fine. Scaling up memory is easy enough, what really matters is which one is faster. 
