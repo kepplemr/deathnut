@@ -234,7 +234,7 @@ def stop_and_remove_container(*containers):
         subprocess.call(rm_cmd, stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
 
 
-def test_redis_down(port):
+def handle_redis_down(port):
     jwt = generate_jwt("michael")
     new_recipe = {"title": "Pizza", "ingredients": ["Crust", "Toppings"]}
     pizza_recipe = make_jwt_request(requests.post, "http://localhost:{}/recipe".format(port), jwt, new_recipe)
@@ -274,7 +274,7 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     deathnut_basics(secured_port)
     list_endpoint(secured_port)
     revoke_all(secured_port)
-    test_redis_down(secured_port)
+    handle_redis_down(secured_port)
     stop_and_remove_container(container, 'esp-{}'.format(tag))
 
 
