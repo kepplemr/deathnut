@@ -47,8 +47,8 @@ handle this. Again, ensuring services do not get bogged down implementing their 
 solutions.
 
 Performance is a central concern. Intra-datacenter calls to redis are extremely fast: for the most
-common 'check role' operation the round-trip response time is about 5ms. For operations that create 
-or update resources, the expected performance hit for adding deathnut will be around this. **For 
+common 'check role' operation the round-trip response time is about 5ms. For operations that create
+or update resources, the expected performance hit for adding deathnut will be around this. **For
 the most common operations (GETs), deathnut is even faster.** We achieve additional speed on GETs by
 not waiting for authorization OK before executing the called endpoint. In another thread (start time
  < 1 millisecond) we then check the user's authorization for the resource. If authorized,
@@ -218,15 +218,15 @@ any string value for a username.
 As for the REST interfaces, currently only auth information passed from ESP via the
 'X-Endpoint-Api-Userinfo' header is supported.
 
-If you're running ESP locally, you can generate these tokens with an appropriate service account 
+If you're running ESP locally, you can generate these tokens with an appropriate service account
 similar to the approach [here](test/e2e_tests/test_e2e.py) (see generate_jwt_token).
 
-If you're interested in generating these tokens to hit cloud endpoints, the below script should be 
-helpful. First you'll need a service account authorized to create custom tokens that we'll exchange 
+If you're interested in generating these tokens to hit cloud endpoints, the below script should be
+helpful. First you'll need a service account authorized to create custom tokens that we'll exchange
 with idtk for id tokens. You'll also need an API key to talk to idtk.
 
 The 'SERVICE_ACCOUNT_KEY' can be obtained by:
-1) Ask Ops to grant you access to the desired firebase project (feinschmecker-integration, 
+1) Ask Ops to grant you access to the desired firebase project (feinschmecker-integration,
 mealhero-app-integration, etc.).
 2) Log into the firebase console and select that project.
 3) Click on the screw widget in the upper left and select 'Project settings'
@@ -278,7 +278,7 @@ m_id, m_jwt = get_id_token_for_user_email('michael@test.com')
 get_response = make_jwt_request(requests.get, edited_recipe_url, m_jwt)
 ```
 
-Each tool has a different way of pulling these headers, all must implement the abstract 
+Each tool has a different way of pulling these headers, all must implement the abstract
 get_auth_header() method defined in the base interface.
 
 The actual extraction of user information from these headers is done [here](deathnut/util/jwt.py).
@@ -288,7 +288,7 @@ For an example of how we test dimsum cloud endpoints E2E, see [here](https://git
 
 # deathnut deployment
 
-On successful build of mfaster, the deathnut 'pip zip' is deployed to GCS @
+On successful build of master, the deathnut 'pip zip' is deployed to GCS @
 https://console.cloud.google.com/storage/browser/dist.getwellio.com/projects/deathnut/master
 
 When making changes to deathnut, bump the version [here](setup.py#L5)

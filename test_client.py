@@ -22,7 +22,7 @@ assert sorted(dn_client.get_resources('michael', 'own')) == ['0', '1', '2']
 # return only 2
 assert len(dn_client.get_resources('michael', 'own', limit=2)) == 2
 
-# assign some more 
+# assign some more
 for i in range(10):
     dn_client.assign_role('michael', 'own', str(i + 3))
 
