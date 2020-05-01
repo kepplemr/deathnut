@@ -5,9 +5,8 @@ several python REST tools (Flask, Falcon, Fastapi) and uses redis for data stora
 
 Endpoint decorators are provided for each REST tool so that services need not add heaps of 
 authorization logic themselves. Instead, introducing a one-line decorator around endpoints can 
-handle all common use cases while basic authz requirements can be understood at a glance. 
-Additionally, a "lower level" deathnut client is available for unique cases or easy investigation of
-authorization status. 
+handle all common use cases and make AuthZ requirements clear at a glance. Additionally, a "lower 
+level" deathnut client is available for unique cases or easy investigation of authorization status. 
 
 # contents
 1. [deathnut overview](#deathnut-overview)
