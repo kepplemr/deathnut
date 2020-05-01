@@ -16,29 +16,29 @@ class TestBaseDeathnutClient(unittest.TestCase):
     def test_assign_role(self):
         random_resource_id = str(uuid.uuid4())
         dn_client.assign_role("test_user", "own", random_resource_id)
-        self.assertTrue(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
-        self.assertFalse(fake_redis_conn.sismember("test_recipes:test_user:own", "42"))
-        #self.assertTrue(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
-        #self.assertFalse(fake_redis_conn.hget("test_recipes:test_user:own", "42"))
+        #self.assertTrue(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
+        #self.assertFalse(fake_redis_conn.sismember("test_recipes:test_user:own", "42"))
+        self.assertTrue(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
+        self.assertFalse(fake_redis_conn.hget("test_recipes:test_user:own", "42"))
 
     def test_check_role(self):
         random_resource_id = str(uuid.uuid4())
         self.assertFalse(dn_client.check_role("test_user", "own", random_resource_id))
         dn_client.assign_role("test_user", "own", random_resource_id)
-        self.assertTrue(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
-        #self.assertTrue(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
+        #self.assertTrue(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
+        self.assertTrue(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
         self.assertTrue(dn_client.check_role("test_user", "own", random_resource_id))
 
     def test_revoke_role(self):
         random_resource_id = str(uuid.uuid4())
         self.assertFalse(dn_client.check_role("test_user", "own", random_resource_id))
         dn_client.assign_role("test_user", "own", random_resource_id)
-        self.assertTrue(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
-        #self.assertTrue(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
+        #self.assertTrue(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
+        self.assertTrue(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
         self.assertTrue(dn_client.check_role("test_user", "own", random_resource_id))
         dn_client.revoke_role("test_user", "own", random_resource_id)
-        self.assertFalse(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
-        #self.assertFalse(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
+        #self.assertFalse(fake_redis_conn.sismember("test_recipes:test_user:own", random_resource_id))
+        self.assertFalse(fake_redis_conn.hget("test_recipes:test_user:own", random_resource_id))
         self.assertFalse(dn_client.check_role("test_user", "own", random_resource_id))
 
     def test_get_resources(self):

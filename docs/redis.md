@@ -54,13 +54,13 @@ benefits.
 
 The drawbacks of using a hash approach over sets are that we cannot assign TTLs to hash fields and
 the keys and values can only be strings. Lack of TTL is not a concern for us because we never
-want these keys to expire anyway. That the keys and values must be strings is also not a limiting 
-concern as for the user object keys should always be uuids (strings) and all we care about is 
+want these keys to expire anyway. That the keys and values must be strings is also not a limiting
+concern as for the user object keys should always be uuids (strings) and all we care about is
 whether they are set or not, which we can represent perfectly well with a "T".
 
 The hashing approach should save some memory early on (when the k,v in a field are less than redis'
-hash-max-ziplist number). Once the number of entries in a hash field exceeds hash-max-ziplist the 
-key-value pairs will be 'unzipped' to a regular hash. 
+hash-max-ziplist number). Once the number of entries in a hash field exceeds hash-max-ziplist the
+key-value pairs will be 'unzipped' to a regular hash.
 
 A test script (see below) was created to evaluate the approaches as n grew in size.
 
@@ -80,41 +80,45 @@ Hash vs Set when n = 1,000,000:\
 From an analysis standpoint the approaches are nearly identical. Hash uses less memory when n is
 small but is slightly slower. Hash uses *more* memory once n exceeds the hash-max-ziplist setting
 (512 by default and in the testing below) but gets *faster* for 'checks' as n gets very large.
-The only significant difference as n grows is the set approach performs about twice as fast for 
+The only significant difference as n grows is the set approach performs about twice as fast for
 'get all ids for role'.
+
+Hash will provide a memory savings for the majority of our data (users with few roles) while also
+performing slightly better for the use case we probably care about the most (checks) when n is
+large.
 
 ## the test script
 
 ```python
-"""                                                                                                                                                                                                                
-Tests time and space performance of redis data strategies for:                                                                                                                                                     
-1) Assign role                                                                                                                                                                                                     
-2) Check role                                                                                                                                                                                                      
-3) Remove role                                                                                                                                                                                                     
-4) Get ids for user, role                                                                                                                                                                                          
-"""                                                                                                                                                                                                                
-import functools                                                                                                                                                                                                   
-import itertools                                                                                                                                                                                                   
-import time                                                                                                                                                                                                        
-import uuid                                                                                                                                                                                                        
-                                                                                                                                                                                                                   
-import docker                                                                                                                                                                                                      
-import redis                                                                                                                                                                                                       
-                                                                                                                                                                                                                   
-USER = "michael"                                                                                                                                                                                                   
-SERVICE_NAME = "dimsum_edited-recipes"                                                                                                                                                                             
-PERMISSION = "view"                                                                                                                                                                                                
-TEST_SIZES = [10, 400, 10000, 1000000]                                                                                                                                                                                                                                                                                                                                                                         
-TEST_RUNS_PER_SIZE = 10                                                                                                                                                                                                                                                                                                                                                                                    
-                                                                                                                                                                                                                   
-docker_client = docker.from_env()                                                                                                                                                                                  
-for container in docker_client.containers.list(all=True):                                                                                                                                                          
-    container.remove(force=True)                                                                                                                                                                                   
-                                                                                                                                                                                                                   
-# https://www.peterbe.com/plog/understanding-redis-hash-max-ziplist-entries                                                                                                                                        
-docker_client.containers.run("redis:3.2.5-alpine", name="redis", ports={'6379/tcp': 6379}, detach=True)                                                                                                            
-time.sleep(5)                                                                                                                                                                                                      
-                                                                                                                                                                                                                   
+"""
+Tests time and space performance of redis data strategies for:
+1) Assign role
+2) Check role
+3) Remove role
+4) Get ids for user, role
+"""
+import functools
+import itertools
+import time
+import uuid
+
+import docker
+import redis
+
+USER = "michael"
+SERVICE_NAME = "dimsum_edited-recipes"
+PERMISSION = "view"
+TEST_SIZES = [10, 400, 10000, 1000000]
+TEST_RUNS_PER_SIZE = 10
+
+docker_client = docker.from_env()
+for container in docker_client.containers.list(all=True):
+    container.remove(force=True)
+
+# https://www.peterbe.com/plog/understanding-redis-hash-max-ziplist-entries
+docker_client.containers.run("redis:3.2.5-alpine", name="redis", ports={'6379/tcp': 6379}, detach=True)
+time.sleep(5)
+
 def time_me(func):
     @functools.wraps(func)
     def timed(*args, **kwargs):
@@ -224,36 +228,36 @@ Average remove time for size 10000: 1.7245433807373047
 Current size:  1000000
 Memory size (mb):  107.96537780761719
 Average assign time for size 1000000: 171.28733401298524
-Average check time for size 1000000: 166.97685203552246              
-Average get_ids time for size 1000000: 8.734644222259522             
-Average remove time for size 1000000: 169.25652508735658                                                                                                                                                           
-                                                                                                                                                                                                                   
-                                                                                                                                                                                                                   
-Current strategy:  <class 'main.SetImplementation'>                                                                                                                                                            
-Current size:  10                                                                                                                                                                                                  
-Memory size (mb):  0.785736083984375                                                                                                                                                                               
-Average assign time for size 10: 0.0020684719085693358                                                                                                                                                             
-Average check time for size 10: 0.001663064956665039                                                                                                                                                               
-Average get_ids time for size 10: 0.0002766132354736328                                                                                                                                                            
-Average remove time for size 10: 0.0015640974044799805                                                                                                                                                             
-                                                                                                                                                                                                                   
-Current size:  400                                                                                                                                                                                                 
-Memory size (mb):  0.81927490234375                                                                                                                                                                                
-Average assign time for size 400: 0.07611594200134278                                                                                                                                                              
-Average check time for size 400: 0.07368333339691162                                                                                                                                                               
-Average get_ids time for size 400: 0.0020056247711181642                                                                                                                                                           
-Average remove time for size 400: 0.06507678031921386                                                                                                                                                              
-                                                                                                                                                                                                                   
-Current size:  10000                                                                                                                                                                                               
-Memory size (mb):  1.67279052734375                                                                                                                                                                                
-Average assign time for size 10000: 1.7643103837966918                                                                                                                                                             
-Average check time for size 10000: 1.637847900390625                                                                                                                                                               
-Average get_ids time for size 10000: 0.042533040046691895                                                                                                                                                          
-Average remove time for size 10000: 1.7352761268615722                                                                                                                                                             
-                                                                                                                                                                                                                   
-Current size:  1000000                                                                                                                                                                                             
-Memory size (mb):  85.07879638671875                                                                                                                                                                               
-Average assign time for size 1000000: 169.62985651493074                                                                                                                                                           
+Average check time for size 1000000: 166.97685203552246
+Average get_ids time for size 1000000: 8.734644222259522
+Average remove time for size 1000000: 169.25652508735658
+
+
+Current strategy:  <class 'main.SetImplementation'>
+Current size:  10
+Memory size (mb):  0.785736083984375
+Average assign time for size 10: 0.0020684719085693358
+Average check time for size 10: 0.001663064956665039
+Average get_ids time for size 10: 0.0002766132354736328
+Average remove time for size 10: 0.0015640974044799805
+
+Current size:  400
+Memory size (mb):  0.81927490234375
+Average assign time for size 400: 0.07611594200134278
+Average check time for size 400: 0.07368333339691162
+Average get_ids time for size 400: 0.0020056247711181642
+Average remove time for size 400: 0.06507678031921386
+
+Current size:  10000
+Memory size (mb):  1.67279052734375
+Average assign time for size 10000: 1.7643103837966918
+Average check time for size 10000: 1.637847900390625
+Average get_ids time for size 10000: 0.042533040046691895
+Average remove time for size 10000: 1.7352761268615722
+
+Current size:  1000000
+Memory size (mb):  85.07879638671875
+Average assign time for size 1000000: 169.62985651493074
 Average check time for size 1000000: 168.92308237552643
 Average get_ids time for size 1000000: 4.649837374687195
 Average remove time for size 1000000: 169.36373128890992

@@ -214,8 +214,8 @@ assert sorted(all_roles['view']) == ['0', '2']
 redis is used as the backend data store for user roles -> resource_ids. redis was chosen because it
 is extremely fast, we're already using it, and GCP provides a managed, HA instance (Memorystore).
 
-Memorystore does now support [exporting db data](https://cloud.google.com/blog/products/databases/cloud-memorystore-adds-import-export-and-redis-4-0). Thus Deathnut backend redis data can be 
-periodically backed up to GCS in RDB format. This process should likely be managed by 
+Memorystore does now support [exporting db data](https://cloud.google.com/blog/products/databases/cloud-memorystore-adds-import-export-and-redis-4-0). Thus Deathnut backend redis data can be
+periodically backed up to GCS in RDB format. This process should likely be managed by
 composer/Airflow once or twice monthly.
 
 Should redis fill up, we want to return outage notifications to the user and log all access
