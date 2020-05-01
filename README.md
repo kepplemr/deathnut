@@ -147,6 +147,13 @@ async def patch_recipe(id: str, recipe: PartialRecipe, request: Request):
     return recipe_db[id]
 ```
 
+For a full E2E example of the deathnut Fastapi interface, see the example app [here](test/e2e_tests/recipe-service/fastapi/app.py).
+
+For full examples of the other interface:
+[flask-apispec](test/e2e_tests/recipe-service/flask/app-apispec.py)
+[flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)
+[falcon](test/e2e_tests/recipe-service/falcon/app.py)
+
 # lower level client
 
 The lower-level client is used by the various REST interfaces to perform the core deathnut
@@ -209,7 +216,26 @@ The low-level deathnut client's job is to encapsulate our communicaiton with red
 any string value for a username.
 
 As for the REST interfaces, currently only auth information passed from ESP via the
-'X-Endpoint-Api-Userinfo' header is supported. 
+'X-Endpoint-Api-Userinfo' header is supported.
+
+If you're running ESP locally, you can generate these tokens with an appropriate service account 
+similar to the approach [here](test/e2e_tests/test_e2e.py) (see generate_jwt_token).
+
+If you're interested in generating these tokens to hit cloud endpoints, the below script should be 
+helpful. First you'll need a service account authorized to create custom tokens that we'll exchange 
+with idtk for id tokens. You'll also need an API key to talk to idtk.
+
+The 'SERVICE_ACCOUNT_KEY' can be obtained by:
+1) Ask Ops to grant you access to the desired firebase project (feinschmecker-integration, 
+mealhero-app-integration, etc.).
+2) Log into the firebase console and select that project.
+3) Click on the screw widget in the upper left and select 'Project settings'
+4) Select 'Service accounts' tab
+5) Click 'Generate new private key'.
+
+The 'FIREBASE_WEB_API_KEY' can be obtained by:
+1) Follow steps 1-3 above
+2) The 'Web API Key' should be displayed in the 'General' tab.
 
 ```python
 import json
@@ -247,11 +273,15 @@ def make_jwt_request(method, url, signed_jwt, data=None, extra_header=None):
     return response
 
 firebase_admin.initialize_app(credentials.Certificate(SERVICE_ACCOUNT_KEY_LOCATION))
+# if user did not yet exist, first run auth.create_user(email=<>, password=<>)
 m_id, m_jwt = get_id_token_for_user_email('michael@test.com')
 get_response = make_jwt_request(requests.get, edited_recipe_url, m_jwt)
 ```
 
-Each tool has a different way of pulling these headers.
+Each tool has a different way of pulling these headers, all must implement the abstract 
+get_auth_header() method defined in the base interface.
+
+The actual extraction of user information from these headers is done [here](deathnut/util/jwt.py).
 
 
 # deathnut deployment
