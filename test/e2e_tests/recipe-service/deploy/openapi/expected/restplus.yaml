@@ -180,6 +180,10 @@ paths:
 produces:
 - application/json
 responses:
+  ConnectionError:
+    description: Return 500 and message when we can't connect to redis
+    schema:
+      $ref: '#/definitions/DeathnutErrorSchema'
   DeathnutException:
     description: Returns error message encountered
     schema:

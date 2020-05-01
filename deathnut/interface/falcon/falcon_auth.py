@@ -5,6 +5,7 @@ from deathnut.schema.marshmallow.dn_schemas_marshmallow import \
     DeathnutAuthSchema
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
+from redis.exceptions import ConnectionError
 
 logger = get_deathnut_logger(__name__)
 
@@ -13,6 +14,10 @@ class ErrorHandler:
     def deathnut_exception(ex, req, resp, params):
         resp.media = {"message": ex.args[0]}
         resp.status = falcon.HTTP_401
+    @staticmethod
+    def redis_exception(ex, req, resp, params):
+        resp.media = {"message": "could not connect to redis"}
+        resp.status = falcon.HTTP_500
 
 class FalconAuthorization(BaseAuthorizationInterface):
     def __init__(self, app, spec, service, resource_type=None, strict=True, enabled=True, **kwargs):
@@ -20,6 +25,7 @@ class FalconAuthorization(BaseAuthorizationInterface):
         self._app = app
         self._spec = spec
         self._app.add_error_handler(DeathnutException, ErrorHandler.deathnut_exception)
+        self._app.add_error_handler(ConnectionError, ErrorHandler.redis_exception)
 
     @staticmethod
     def get_auth_header(*args, **kwargs):

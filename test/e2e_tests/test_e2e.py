@@ -234,6 +234,18 @@ def stop_and_remove_container(*containers):
         subprocess.call(rm_cmd, stdout=open(os.devnull, 'w'), stderr=subprocess.STDOUT)
 
 
+def test_redis_down(port):
+    jwt = generate_jwt("michael")
+    new_recipe = {"title": "Pizza", "ingredients": ["Crust", "Toppings"]}
+    pizza_recipe = make_jwt_request(requests.post, "http://localhost:{}/recipe".format(port), jwt, new_recipe)
+    pizza_id = json.loads(pizza_recipe.text)["id"]
+    recipe = json.loads(make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pizza_id), jwt).text)
+    assert recipe["title"] == "Pizza"
+    stop_and_remove_container('redis')
+    resp = json.loads(make_jwt_request(requests.get, "http://localhost:{}/recipe/{}".format(port, pizza_id), jwt).text)
+    assert resp["message"] == "could not connect to redis"
+
+
 def test_apispec_e2e():
     run_e2e_suite('recipe-service-apispec', 80, 8080)
 
@@ -262,12 +274,13 @@ def run_e2e_suite(container, unsecured_port, secured_port):
     deathnut_basics(secured_port)
     list_endpoint(secured_port)
     revoke_all(secured_port)
+    test_redis_down(secured_port)
     stop_and_remove_container(container, 'esp-{}'.format(tag))
 
 
 atexit.register(stop_and_remove_container, *ALL_CONTAINERS)
 if __name__ == "__main__":
+    test_fastapi_e2e()
     test_apispec_e2e()
     test_restplus_e2e()
-    test_fastapi_e2e()
     test_falcon_e2e()

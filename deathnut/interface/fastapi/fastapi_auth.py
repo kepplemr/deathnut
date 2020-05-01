@@ -6,6 +6,7 @@ from deathnut.interface.base_interface import BaseAuthorizationInterface
 from deathnut.schema.pydantic.dn_schemas_pydantic import DeathnutAuthSchema
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
+from redis.exceptions import ConnectionError
 from starlette.requests import Request
 from starlette.responses import JSONResponse
 
@@ -19,8 +20,11 @@ class FastapiAuthorization(BaseAuthorizationInterface):
 
     def register_error_handler(self):
         @self._app.exception_handler(DeathnutException)
-        async def unicorn_exception_handler(request: Request, exc: DeathnutException):
+        async def deathnut_exception_handler(request: Request, exc: DeathnutException):
             return JSONResponse(status_code=401, content={"message": exc.args[0]})
+        @self._app.exception_handler(ConnectionError)
+        async def redis_exception_handler(request: Request, exc: ConnectionError):
+            return JSONResponse(status_code=500, content={"message": "could not connect to redis"})
 
     @staticmethod
     def _execute(dn_func, request, *args, **kwargs):

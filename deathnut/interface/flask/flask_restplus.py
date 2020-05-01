@@ -7,6 +7,7 @@ from deathnut.util.logger import get_deathnut_logger
 from deathnut.util.redis import get_redis_connection
 from flask import request
 from flask_restplus import Resource
+from redis.exceptions import ConnectionError
 
 logger = get_deathnut_logger(__name__)
 
@@ -37,6 +38,11 @@ class FlaskRestplusAuthorization(FlaskAuthorization):
         def handle_deathnut_failures(error):
             """Returns error message encountered"""
             return {"message": error.args[0]}, 401
+        @self._api.errorhandler(ConnectionError)
+        @self._api.marshal_with(self.deathnut_error_schema)
+        def handle_redis_failure(error):
+            """Return 500 and message when we can't connect to redis"""
+            return {"message": "could not connect to redis"}, 500
 
 class FlaskRestplusAuthEndpoint(BaseAuthEndpoint):
     def __init__(self, auth_o, api, name):

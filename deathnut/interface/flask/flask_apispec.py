@@ -5,6 +5,7 @@ from deathnut.schema.marshmallow.dn_schemas_marshmallow import (
 from deathnut.util.deathnut_exception import DeathnutException
 from deathnut.util.logger import get_deathnut_logger
 from flask_apispec import marshal_with, use_kwargs
+from redis.exceptions import ConnectionError
 
 logger = get_deathnut_logger(__name__)
 
@@ -32,6 +33,10 @@ class FlaskAPISpecAuthorization(FlaskAuthorization):
         @marshal_with(DeathnutErrorSchema)
         def handle_deathnut_failures(error):
             return {"message": error.args[0]}, 401
+        @self._app.errorhandler(ConnectionError)
+        @marshal_with(DeathnutErrorSchema)
+        def handle_redis_failure(error):
+            return {"message": "could not connect to redis"}, 500
 
 class FlaskAPISpecAuthEndpoint(BaseAuthEndpoint):
     def __init__(self, auth_o, app, name):
