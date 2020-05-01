@@ -110,7 +110,7 @@ class BaseAuthorizationInterface(ABC):
                 limit = kwargs.get('limit', 500)
                 jwt_header = self.get_auth_header(*args, **kwargs)
                 user, enabled, strict = self._get_auth_arguments(jwt_header, **kwargs)
-                deathnut_ids = next(self._client.get_resources(user, role, limit))
+                deathnut_ids = self._client.get_resources(user, role, limit)
                 return self._execute_if_authenticated(user, enabled, strict, func, *args,
                     deathnut_ids=deathnut_ids, **kwargs)
             return wrapped

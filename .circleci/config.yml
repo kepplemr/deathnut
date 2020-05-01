@@ -78,6 +78,6 @@ workflows:
       - test:
           requires:
             - style-check
-      - deploy:
-          requires:
-            - test
+      # - deploy:
+      #     requires:
+      #       - test

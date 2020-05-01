@@ -16,9 +16,9 @@ import redis
 USER = "michael"
 SERVICE_NAME = "dimsum_edited-recipes"
 PERMISSION = "view"
-TEST_SIZES = [10, 400, 10_000, 1_000_000]
-#TEST_SIZES = [300]
-TEST_RUNS_PER_SIZE = 10
+#TEST_SIZES = [10, 400, 10_000, 1_000_000]
+TEST_SIZES = [20_000]
+TEST_RUNS_PER_SIZE = 1
 
 docker_client = docker.from_env()
 for container in docker_client.containers.list(all=True):
@@ -71,7 +71,7 @@ class HashImplementation(BaseImplementation):
     @time_me
     def assign_role(self, resource_ids):
         for r_id in resource_ids:
-            self.redis_client.hset("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION), r_id, 1)
+            self.redis_client.hset("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION), r_id, "T")
     @time_me
     def check_role(self, resource_ids):
         for r_id in resource_ids:
@@ -84,11 +84,12 @@ class HashImplementation(BaseImplementation):
     def get_ids_for_user_and_role(self, limit):
         return list(itertools.chain.from_iterable(self.get_ids(limit)))
     def get_ids(self, page_size=10):
-        cursor = "0"
-        while cursor != 0:
-            cursor, data = self.redis_client.hscan("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION),
-                cursor=cursor, count=page_size)
-            yield [x[0].decode() for x in data.items()]
+        return self.redis_client.hgetall("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION))
+        # cursor = "0"
+        # while cursor != 0:
+        #     cursor, data = self.redis_client.hscan("{}:{}:{}".format(SERVICE_NAME, USER, PERMISSION),
+        #         cursor=cursor, count=page_size)
+        #     yield [x[0].decode() for x in data.items()]
 
 class SetImplementation(BaseImplementation):
     def __init__(self):
@@ -109,7 +110,7 @@ class SetImplementation(BaseImplementation):
     def get_ids_for_user_and_role(self, limit):
         return self.redis_client.smembers("{}:{}:{}".format(SERVICE_NAME, USER, 'view'))
 
-for strat in [HashImplementation, SetImplementation]:
+for strat in [SetImplementation, HashImplementation]:
     curr_strat = strat()
     print('\nCurrent strategy: ', curr_strat.__class__)
     for test_size in TEST_SIZES:
