@@ -16,12 +16,14 @@ level" deathnut client is available for unique cases or easy investigation of au
     - [e2e example - flask-apispec](test/e2e_tests/recipe-service/flask/app-apispec.py)
     - [e2e example - flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)
     - [e2e example - falcon](test/e2e_tests/recipe-service/falcon/app.py)
-4. [lower-level client](#lower-level-client)
-5. [redis overview](#redis-overview)
+4. [interface magic](#interface-magic)
+5. [strict, enabled](#strict,-enabled)
+6. [lower-level client](#lower-level-client)
+7. [redis overview](#redis-overview)
     - [detailed redis walkthrough](docs/redis.md)
-6. [authentication overview](#authentication-overview)
-7. [deathnut deployment](#deathnut-deployment)
-8. [pre-commit setup](#pre-commit-setup)
+8. [authentication overview](#authentication-overview)
+9. [deathnut deployment](#deathnut-deployment)
+10. [pre-commit setup](#pre-commit-setup)
 
 # main concepts
 
@@ -155,7 +157,28 @@ For full examples of the other interface:
 
 # interface magic
 
-TODO deathnut_user, deathnut_ids
+In the above example, the deathnut decorator adds some attributes to the provided starlette request
+object. The calling user (extracted from the JWT) can be found at request.deathnut_user.
+
+For the fetch_accessible_for_user(role) decorator an additional request.deathnut_ids list is
+provided, populated with all the resource ids the calling user is able to access for the role
+indicated.
+
+For interfaces other than fastapi, deathnut_user and deathnut_ids are supplied as kwargs to the
+endpoint functions.
+
+# strict, enabled
+
+In the above example, the FastApiAuthorization interface constructor is passed 'enabled=True' and
+'strict=False'. What these settings mean:
+
+- enabled = if false, deathnut does nothing but wrap the endpoints and product some log info to test
+that it is working. A nice way to test that everything is imported properly and ready to go.
+
+- strict = if false, deathnut will allow unauthenticated users to call the app as well. Since ESP
+will not allow external users in without a JWT token, this will mostly be internal traffic. In the
+above example, recipes should be created and fetched but no access grants would be honored. If
+strict is true, *only* JWT-authenticated users will be able to access the endpoint.
 
 # lower level client
 
@@ -309,4 +332,4 @@ When making changes to deathnut, bump the version [here](setup.py#L5)
 
 # pre-commit setup
 
-1) brew install pre-commit
+brew install pre-commit

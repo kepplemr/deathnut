@@ -24,7 +24,7 @@ redis:6379> SISMEMBER dimsum_edited-recipes:jennifer:view 85a9082e-e5c8-454c-b02
 
 ## hashes
 
-redis hashes are hashes that map string names to string values. This is the datastruture actually
+redis hashes are objects that map string names to string values. This is the datastruture actually
 utilized by the "low level" deathnut client (and the various interfaces built on top).
 
 The hash approach equivalent of the above set commands:
@@ -43,6 +43,9 @@ redis:6379> HDEL dimsum_edited-recipes:jennifer:view 85a9082e-e5c8-454c-b020-ac1
 redis:6379> HGET dimsum_edited-recipes:jennifer:view 85a9082e-e5c8-454c-b020-ac168ce91669
 (nil)
 ```
+
+So in the above 'dimsum_edited-recipes:jennifer:view' is a hash object, ids are keys, and 'T' is the
+value (when set).
 
 ## so why hashes over sets
 
