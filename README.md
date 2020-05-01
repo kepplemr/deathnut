@@ -17,7 +17,7 @@ level" deathnut client is available for unique cases or easy investigation of au
     - [e2e example - flask-restplus](test/e2e_tests/recipe-service/flask/app-restplus.py)
     - [e2e example - falcon](test/e2e_tests/recipe-service/falcon/app.py)
 4. [interface magic](#interface-magic)
-5. [strict & enabled](#strict-&amp;-enabled)
+5. [strict and enabled](#strict-and-enabled)
 6. [lower-level client](#lower-level-client)
 7. [redis overview](#redis-overview)
     - [detailed redis walkthrough](docs/redis.md)
@@ -167,7 +167,7 @@ indicated.
 For interfaces other than fastapi, deathnut_user and deathnut_ids are supplied as kwargs to the
 endpoint functions.
 
-# strict & enabled
+# strict and enabled
 
 In the above example, the FastApiAuthorization interface constructor is passed 'enabled=True' and
 'strict=False'. What these settings mean:
