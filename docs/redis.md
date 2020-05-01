@@ -1,6 +1,6 @@
 # redis overview
 
-redis is used as the backend data store for user roles -> resource_ids. redis was chosen because it 
+redis is used as the backend data store for user roles -> resource_ids. redis was chosen because it
 is extremely fast, we're already using it, and GCP provides a managed, HA instance (Memorystore).
 
 # data model
@@ -55,18 +55,18 @@ In [redis docs on memory optimization](https://redis.io/topics/memory-optimizati
 using hashes "when possible." The documentation there is excellent for a full overview of what's
 going on, but suffice to say using hashes allows redis to store the hash values more efficiently in
 memory (as a ziplist up to a certain threshold) as well as take advantage of cache locality
-benefits. 
+benefits.
 
 The drawbacks of using a hash approach over sets are that we cannot assign TTLs to hash fields and
 the keys and values can only be strings. Lack of TTL is not a concern for us because we *never*
-want these keys to expire. That the keys and values must be strings is also not a limiting concern 
+want these keys to expire. That the keys and values must be strings is also not a limiting concern
 as for the user object, keys should always be uuids (strings) and all we care about is whether they
 are set or not, which we can represent perfectly well with a "T".
 
 ## who cares about memory usage, which approach is faster?
 
 Fine. Scaling up memory is easy enough, what really matters is which one is faster. While the
-ziplist approach may increase cache locality, it is also not a truly O(1) lookup when the 
+ziplist approach may increase cache locality, it is also not a truly O(1) lookup when the
 
 
 

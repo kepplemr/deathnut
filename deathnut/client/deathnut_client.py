@@ -60,7 +60,7 @@ class DeathnutClient(object):
             # cursor, data = self._client.hscan("{}:{}:{}".format(self._name, user, role),
             #     cursor=cursor, count=page_size)
             # yield [x[0].decode() for x in data.items()]
-    
+
     def get_resources(self, user, role, limit=None):
         """
         Note

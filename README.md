@@ -3,10 +3,10 @@
 Deathnut is an extremely simple, easy-to-use, and blazing fast authorization library. It supports
 several python REST tools (Flask, Falcon, Fastapi) and uses redis for data storage.
 
-Endpoint decorators are provided for each REST tool so that services need not add heaps of 
-authorization logic themselves. Instead, introducing a one-line decorator around endpoints can 
-handle all common use cases and make AuthZ requirements clear at a glance. Additionally, a "lower 
-level" deathnut client is available for unique cases or easy investigation of authorization status. 
+Endpoint decorators are provided for each REST tool so that services need not add heaps of
+authorization logic themselves. Instead, introducing a one-line decorator around endpoints can
+handle all common use cases and make AuthZ requirements clear at a glance. Additionally, a "lower
+level" deathnut client is available for unique cases or easy investigation of authorization status.
 
 # contents
 1. [deathnut overview](#deathnut-overview)
@@ -27,27 +27,27 @@ level" deathnut client is available for unique cases or easy investigation of au
 # main concepts
 
 Deathnut is not a service. Deathnut is a library/tool that services can use to handle their own
-authorization logic. 
+authorization logic.
 
 It encapsulates logic to talk to redis and assign/retrieve stored user authorization information.
-For a given user and resource_id, a service with deathnut can: assign a role, check a role, and 
+For a given user and resource_id, a service with deathnut can: assign a role, check a role, and
 revoke a role. There are no restrictions on the number or naming of roles that a service can use;
-that is entirely up to the service. In most examples we'll use ['view', 'edit', 'own'] for 
-privileges but these could just as easily be ['serf', 'peasant', 'knight', 'king']. 
+that is entirely up to the service. In most examples we'll use ['view', 'edit', 'own'] for
+privileges but these could just as easily be ['serf', 'peasant', 'knight', 'king'].
 
 Deathnut does not handle authentication of users. It relies on the pod ESP sidecar(s) to verify the
 signage of JWT tokens received from cloud endpoints. When ESP does this successfully, it attaches a
 'X-Endpoint-Api-Userinfo' header with user information deathnut trusts entirely for AuthZ. Other
-headers/auth support could be added, but this header is currently all that is supported. 
+headers/auth support could be added, but this header is currently all that is supported.
 
 In addition to the one-line decorators to surround endpoints with authorization requirements/etc,
-deathnut interfaces also provide the ability to add **auth endpoints**. Auth endpoints are easy ways 
-to define which user privileges can grant/revoke from others, and provides an endpoint to entirely 
-handle this. Again, ensuring services do not get bogged down implementing their own authorization 
-solutions. 
+deathnut interfaces also provide the ability to add **auth endpoints**. Auth endpoints are easy ways
+to define which user privileges can grant/revoke from others, and provides an endpoint to entirely
+handle this. Again, ensuring services do not get bogged down implementing their own authorization
+solutions.
 
 Performance is a central concern. Intra-datacenter calls to redis are extremely fast: for the most
-common 'hget' operation the round-trip response time is about 5ms. For operations that create or 
+common 'hget' operation the round-trip response time is about 5ms. For operations that create or
 update resournces, the expected performance hit for adding deathnut will be around this. **For the
 most common operations (GETs), deathnut is even faster.** We achieve additional speed on GETs by
 not waiting for authorization OK before executing the called endpoint. In another thread (start time
@@ -71,15 +71,15 @@ creator can update.
 4) By calling GET on /recipe, users will receive a list of all recipes they have 'view' access to.
 
 Towards the top, we also create an **auth endpoint** which allows for easy handling of user-initiated
-sharing and revocation of access. The endpoint is added to the service (and OpenAPI specs) at 
-/auth-recipe. Any number of auth endpoints can be defined, but one per service should handle most 
+sharing and revocation of access. The endpoint is added to the service (and OpenAPI specs) at
+/auth-recipe. Any number of auth endpoints can be defined, but one per service should handle most
 use cases.
 
 Once we have an auth endpoint defined, we specify the roles available for granting.
-Here a role of 'own' can grant 'view', 'edit', and 'own'. A role of 'edit' can grant 'view'. 
+Here a role of 'own' can grant 'view', 'edit', and 'own'. A role of 'edit' can grant 'view'.
 
 As the initial creator is assigned all privileges (own, edit, view), they are capable of granting
-a friend whatever access the friend would want. 
+a friend whatever access the friend would want.
 
 If the initial user 'user1' wants to grant their friend 'user2' access to view and edit the recipe,
 they would initiate a call to /auth-recipe containing:
@@ -87,8 +87,8 @@ they would initiate a call to /auth-recipe containing:
 ```json
 {"id": "${recipe_id}", "requires": "own", "grants": ["view", "edit"], "user": "${user2_id}"}
 ```
-The data payload indicates user1 (determined via JWT token) wants to use their 'own' privilege to 
-grant ['edit', 'view'] to user2. 
+The data payload indicates user1 (determined via JWT token) wants to use their 'own' privilege to
+grant ['edit', 'view'] to user2.
 
 Deathnut will:
 1) verify that the authenticated user (user1) has the 'own' privilege.
@@ -109,12 +109,12 @@ their own created recipe!
 
 To avoid such situations, services should likely follow the pattern below of granting the initial
 creator an extra privilege ('own') that they need not share to grant others full access to view/edit
-their created recipe. 
+their created recipe.
 
 ```python
 app = FastAPI()
 redis_conn = redis.Redis(host="redis", port=6379)
-auth_o = FastapiAuthorization(app, service="example", resource_type="recipe", 
+auth_o = FastapiAuthorization(app, service="example", resource_type="recipe",
     redis_connection=redis_conn, enabled=True, strict=False)
 auth_endpoint = auth_o.create_auth_endpoint('/auth-recipe')
 auth_endpoint.allow_grant(requires_role='own', grants_roles=['view', 'edit', 'own'])
@@ -151,7 +151,7 @@ async def patch_recipe(id: str, recipe: PartialRecipe, request: Request):
 
 The lower-level client is used by the various REST interfaces to perform the core deathnut
 operations (assign, check, remove). Additionally, there are some methods that are useful for
-debugging. 
+debugging.
 
 The following test script shows how to interact with the client:
 
@@ -180,7 +180,7 @@ assert sorted(dn_client.get_resources('michael', 'own')) == ['0', '1', '2']
 # return only 2
 assert len(dn_client.get_resources('michael', 'own', limit=2)) == 2
 
-# assign some more 
+# assign some more
 for i in range(10):
     dn_client.assign_role('michael', 'own', str(i + 3))
 
@@ -196,7 +196,8 @@ all_roles = dn_client.get_roles('michael')
 assert sorted(all_roles['own']) == ['0', '1', '10', '11', '12', '2', '3', '4', '5', '6', '7', '8', '9']
 assert sorted(all_roles['view']) == ['0', '2']
 ```
-Note: 
+
+Note: get_roles(user) is for debugging and should not be used in prod endpoints.
 
 # redis overview
 
